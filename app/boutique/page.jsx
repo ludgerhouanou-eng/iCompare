@@ -1,5 +1,4 @@
 import BoutiqueClient from "../../components/BoutiqueClient.jsx";
-import Disclosure from "../../components/Disclosure.jsx";
 import { SITE } from "../../lib/site.js";
 import {
   CATEGORIES,
@@ -116,7 +115,6 @@ export default function BoutiquePage() {
           iPad, casques et chargeurs. <strong>{BOUTIQUE_PRODUCTS.length} produits</strong>,
           prix relevés le {CATALOG_UPDATED}, zéro blabla.
         </p>
-        <Disclosure />
       </div>
 
       <section className="section" style={{ paddingTop: 20 }}>
