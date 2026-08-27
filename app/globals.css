@@ -35,6 +35,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
   line-height: 1.65;
   font-size: 16px;
 }
@@ -659,23 +660,110 @@ td.col-rumor, th.col-rumor { background: #fdf0f8; }
 .method-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); }
 .method-box p { color: var(--text-2); font-size: 15px; }
 
-/* ---------- Responsive ---------- */
+/* ============================================================
+   RESPONSIVE — Mac (>=1020px) · iPad (768-1020) ·
+   iPhone / Android (<=680px) · petits téléphones (<=380px)
+   ============================================================ */
+
+/* iPad & petits écrans de bureau (≤ 1020px) */
 @media (max-width: 1020px) {
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .grid-5 { grid-template-columns: repeat(2, 1fr); }
   .analysis-grid { grid-template-columns: 1fr; }
   .bars { grid-template-columns: 1fr; }
+  .hero h1 { font-size: clamp(32px, 4.6vw, 46px); }
+
+  /* Navigation : une seule rangée défilante (header à hauteur constante) */
+  .header-inner { gap: 10px; }
+  .nav {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, #000 92%, transparent);
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a { flex-shrink: 0; }
 }
+
+/* iPhone & Android (≤ 680px) */
 @media (max-width: 680px) {
-  .grid-3, .grid-5, .usp-list { grid-template-columns: 1fr; }
+  /* Header : compact sous l'encoche des iPhone et la barre d'adresse Android */
+  .brand { flex-shrink: 0; font-size: 17px; }
+  .nav a { font-size: 13.5px; padding: 7px 12px; }
+
+  .page-head { padding: 36px 0 6px; }
   .section { padding: 46px 0; }
   .hero { padding-top: 56px; }
   .hero-sub { font-size: 16.5px; }
-  .bar-row { grid-template-columns: 34px 1fr 104px; }
-  .footer-grid { grid-template-columns: 1fr; gap: 26px; }
-  .buybar-note { display: none; }
-  .buybar .btn { flex: 1; }
+  .hero-ctas .btn { flex: 1 1 auto; }
+
+  /* Diaporama : légende compacte, flèches discrètes, coins adoucis */
+  .hero-slider { margin-top: 32px; border-radius: 18px; }
   .slider-arrow { width: 34px; height: 34px; font-size: 14px; }
-  .slide-caption { padding: 40px 18px 30px; }
+  .slider-arrow.prev { left: 8px; }
+  .slider-arrow.next { right: 8px; }
+  .slide-caption { padding: 34px 44px 30px; }
+  .slide-kicker { font-size: 10.5px; }
+  .slide-title { font-size: 15px; }
+
+  /* Grilles 1 colonne + cartes compactes */
+  .grid-3, .grid-5, .usp-list { grid-template-columns: 1fr; }
   .phone-photo { height: 170px; }
+  .chip { font-size: 11.5px; padding: 3px 8px; }
+
+  /* Fiches techniques : défilement horizontal confortable, 1re colonne sticky */
+  .spec th, .spec td { padding: 10px 12px; font-size: 13.5px; }
+  .spec th[scope="row"], .spec th:first-child { min-width: 148px; }
+  .spec-head { gap: 3px; }
+  .spec-head svg { height: 70px !important; }
+  .table-legend { font-size: 12px; }
+
+  /* Onglets boutique : une seule rangée défilante (pas de bloc sticky géant) */
+  .tabs {
+    top: 68px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 10px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; font-size: 13px; padding: 8px 14px; }
+
+  /* Sommaire, FAQ, profils, barres */
+  .toc { gap: 6px; padding: 12px; }
+  .toc a { font-size: 12.5px; padding: 6px 10px; }
+  .faq-item summary { font-size: 15px; padding: 16px 0; }
+  .profile-card .badge { font-size: 11.5px; }
+  .bar-row { grid-template-columns: 34px 1fr 104px; }
+
+  /* Barre d'achat fixe : UNE rangée défilante (safe-area iPhone) */
+  .buybar { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .buybar-inner { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .buybar-inner::-webkit-scrollbar { display: none; }
+  .buybar .btn { flex-shrink: 0; flex: none; font-size: 12.5px; padding: 10px 14px; }
+  .buybar-note { display: none; }
+
+  /* Footer */
+  .footer { padding: 36px 0 44px; margin-top: 28px; }
+  .footer-grid { grid-template-columns: 1fr; gap: 26px; }
+}
+
+/* Très petits téléphones (≤ 380px — iPhone SE, Android compacts) */
+@media (max-width: 380px) {
+  .hero h1 { font-size: 29px; }
+  h2 { font-size: 24px; }
+  .phone-photo { height: 150px; }
+  .slide-title { font-size: 14px; }
+  .btn { padding: 12px 18px; font-size: 14px; }
+}
+
+/* Accessibilité : respect du « mouvement réduit » (iOS, Android, macOS) */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .slider-track, .btn, .nav a, .tab-btn, .faq-icon { transition: none; }
 }
