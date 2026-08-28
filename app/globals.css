@@ -323,6 +323,15 @@ p { margin: 0 0 14px; }
 .phone-price { margin-top: auto; padding-top: 10px; }
 .price-now { display: block; font-size: 21px; font-weight: 750; letter-spacing: -0.02em; }
 .price-note { display: block; font-size: 12.5px; color: var(--text-3); }
+/* La carte boutique n'affiche plus de montant : une mention de remise datée,
+   lue à +16 % presqu'aussi lisible qu'un prix, et qui ne se périme pas. */
+.price-remise {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.01em;
+}
 .product-img { max-height: 195px; width: auto; object-fit: contain; margin: 0 auto; }
 
 /* ---------- Badges (teintes légères) ---------- */

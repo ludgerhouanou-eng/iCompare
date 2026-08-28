@@ -30,8 +30,15 @@ reçoit** : il lit le HTML statique sorti par Next et vérifie, page par page �
 - chaque lien Amazon portant le tag d'associé configuré, `rel="sponsored"`,
   sans `?tag=` vide ;
 - aucun `href="null"` (produit non vendu → bouton masqué, pas lien cassé) ;
-- chaque bloc JSON-LD parsable, et le prix de l'`Offer` égal au minimum de la
-  fourchette affichée sur la même carte ;
+- chaque bloc JSON-LD parsable ;
+- **`/boutique` sans aucun montant** : zéro « € » dans le HTML visible, aucune
+  `Offer` dans le JSON-LD de cette page, et 15 boutons « Consulter le prix sur
+  Amazon » pour 15 cartes rendues (un compteur est imprimé : une règle qui
+  n'examine rien ne peut pas passer au vert) ;
+- sur chaque fiche produit, le prix de l'`Offer` égal au minimum du montant
+  affiché dans l'encart prix — `euroMini()` est **importée de `lib/prix.js`**,
+  pas réécrite dans le contrôle : un test qui réimplémente la logique du site
+  ne teste que lui-même ;
 - chaque lien interne correspondant à une page réellement construite ;
 - aucun poids de page anormal (> 220 Ko : signe qu'une page mérite d'être
   découpée) et aucun placeholder (`votretag`, `votredomaine`) dans le HTML.
@@ -195,7 +202,10 @@ commissions sont perdues. Dans cet ordre :
    durable : Amazon vérifie le domaine déclaré).
 2. **Déclarer ce domaine** dans le compte Associates du marché visé, et seulement
    ensuite demander un identifiant de suivi de ce marché.
-3. **Renseigner `SITE_URL` et `AMAZON_TAG`** en variables d'environnement,
+3. **Renseigner `SITE_URL` et `AMAZON_TAG`** en variables d'environnement
+   (`SITE_URL` n'est plus obligatoire depuis que `https://icomparev2.vercel.app`
+   est le repli de `lib/site.js`, mais une variable d'environnement reste la
+   bonne façon de changer de domaine sans repousser de code) ;
    repousser, vérifier dans le HTML livré que chaque lien porte le bon tag.
 
 En attendant : `AMAZON_TAG=""` produit des liens Amazon **sans tag** (le build ne
@@ -215,16 +225,38 @@ personne/structure éligible.
 
 ## Avant de mettre en ligne (à faire)
 
-1. **Domaine** → `lib/site.js` : `SITE.url = "https://votredomaine.fr"`
-   (alimente les canonical, le sitemap, l'Open Graph et le JSON-LD).
-   Le nom de domaine doit être **déclaré et approuvé** dans votre compte
-   Associates, sinon les liens sont refusés. Un placeholder présent dans la
-   page vaut aussi un canonical erroné pour Google.
-3. **Vraies images produits** (une fois votre compte Amazon créé) :
-   Amazon Associates → **Link Builder** → cocher « Include product » + « Product Image »
-   (seule utilisation légale des images Amazon, ToS §5.3), puis remplir le champ
-   `image` de chaque produit dans `lib/catalog.js`. En attendant, des illustrations
-   SVG locales sont affichées (zéro risque ToS).
+1. **Domaine** — le repli de `lib/site.js` est désormais le domaine de
+   production réel, `https://icomparev2.vercel.app` : canonical, sitemap,
+   Open Graph et JSON-LD sont donc justes tels quels. Ce que le code ne peut
+   pas faire à votre place : **déclarer cette URL exacte** dans la liste des
+   sites du compte Associates (Account settings → « Your websites »). Un lien
+   posé depuis un domaine non déclaré n'est pas attribué. Quand un domaine
+   personnel remplacera le sous-domaine Vercel, réglez-le avec la variable
+   d'environnement `SITE_URL` (rien à repousser) — un sous-domaine
+   `*.vercel.app` reste une adresse empruntée, et un comparateur de prix a
+   intérêt à loger ailleurs.
+2. **Marché France** — vérifier que le compte qui porte `ludgerhouanou-21`
+   rémunère bien `amazon.fr` (profil fiscal + moyen de paiement validés), puis
+   faire les **3 ventes qualifiantes dans les 180 jours** qui débloquent le
+   compte, l'accès aux rapports détaillés et — c'est la même porte — la
+   **PA API**, seule voie légale pour afficher un prix sur ce site.
+3. **Deux liens à confirmer par l'éditeur** : les 13 ASIN de la boutique ont
+   été revérifiés un à un (page 200 **et** titre du produit concordant avec la
+   carte : capacité, coloris, état). Les deux accessoires de montre n'ont pas
+   pu l'être depuis ici — Amazon répond `503` (mur anti-robot) sur
+   `dp/B0DWMPW319` (câble AOOZTO) et `dp/B0F1C4XV6B` (chargeur RUXELY).
+   Ouvrez-les dans un navigateur : si l'un des deux n'est plus vendu ou n'est
+   plus le bon, remplacez l'`asin` par un lien SiteStripe épinglé dans le champ
+   `link` de l'objet, ou retirez la référence. Comme ces deux-
+   là ne portent aucune donnée technique et aucun prix affiché, une fiche
+   d'accessoire au lien mort est ce que le site a de plus fragile.
+4. **Vraies images produits** (une fois le compte approuvé) : Associates →
+   **Link Builder** → cocher « Include product » + « Product Image », puis
+   remplir le champ `image` de chaque produit dans `lib/catalog.js`. Les
+   visuels doivent venir des outils Amazon : la section « Licence IP » des
+   Politiques du programme encadre l'usage du Contenu du Programme, et une
+   copie taken ailleurs est le motif de fermeture le plus courant. En
+   attendant, des illustrations SVG locales sont affichées (zéro risque).
 
 ## Fiches produit et bons plans (depuis v1.3)
 
@@ -280,6 +312,31 @@ Mesuré sur le build statique, `comparatif.html` passe de **185,1 Ko à 158 Ko**
 vraiment le réseau — la page boutique est à parité (14,1 contre 14,5 Ko) tout
 en restant lisible sans JavaScript.
 
+### La boutique n'affiche pas de prix
+
+Choix demandé par l'éditeur, et imposé par le règlement : les Politiques du
+Programme Partenaires Amazon FR (« Liens présents sur votre site », mise à jour
+du 14 avril 2026) limitent ainsi l'affichage des prix :
+
+> « Sachant que la disponibilité et les prix des Produits que vous avez
+> répertoriés sur votre Site sont susceptibles de changer, votre Site peut
+> indiquer uniquement les prix et la disponibilité si : (a) nous fournissons le
+> lien affichant le prix et la disponibilité du Produit ou (b) vous obtenez les
+> prix et la disponibilité des Produits via une PA API […]. »
+
+Les montants de ce dépôt viennent d'un relevé manuel : ils ne remplissent ni
+(a) ni (b). La même page d'aide impose par ailleurs de retirer « dès la fin de
+la promotion » toute mention de remise limitée dans le temps — ce qu'un build
+statique ne sait pas détecter. `/boutique` ne montre donc **aucun montant** :
+chaque carte porte un bouton « Consulter le prix sur Amazon » (le prix vient
+d'Amazon, il est donc toujours juste) et, s'il y a lieu, un rappel daté en
+écart au prix de lancement Apple — un fait historique, qui ne se périme pas.
+
+Ce que cela coûte : les 15 cartes ne sont plus éligibles au résultat enrichi
+« Marchandises » (aucun `Offer` déclaré). C'est le prix de la conformité, et il
+ne touche ni `/comparatif` ni `/bons-plans` ni les fiches produit, qui
+assument leurs montants datés — étendez la règle si vous voulez l'uniformiser.
+
 ### Un seul prix par produit
 
 Il existait deux sources de vérité pour le même montant : la fourchette
@@ -300,9 +357,12 @@ diverger.
 ## SEO inclus
 
 - Meta descriptions + Open Graph + Twitter Card sur les 3 pages
-- JSON-LD : BreadcrumbList, ItemList de Products (with AggregateOffer), FAQPage (7 Q)
+- JSON-LD : BreadcrumbList partout ; ItemList de Products **sans offers** sur
+  `/boutique` (aucun prix affiché sur la page) ; Product + Offer sur les fiches
+  qui affichent un montant ; FAQPage (7 questions) ; ItemList + AggregateOffer sur
+  le comparatif
 - Sitemap XML + robots.txt (routes Next.js natives)
-- Balises canonical, prix datés « vérifiés le 27 août 2026 »
+- Balises canonical ; montants datés sur les pages qui en affichent
 - Rumeurs iPhone 18 sourcées et étiquetées (pas de contenu inventé)
 - Google Search Console : après déploiement, soumettez `<SITE.url>/sitemap.xml`
 
@@ -311,7 +371,10 @@ diverger.
 - Disclosure visible en haut de chaque page + footer (« Partenaire Amazon »).
 - Liens produits : `target="_blank" rel="sponsored nofollow noopener"`.
 - Jamais « Amazon » dans les `<title>`.
-- Prix indicatifs + date de relevé (champs `UPDATED` dans `lib/*.js`).
+- Pas de prix hors PA API en boutique ; ailleurs, montant daté du relevé
+  (champs `UPDATED` dans `lib/*.js`) et jamais présenté comme le prix du jour.
+- Aucune promotion affichée comme « en cours » : seule une remise **constatée à
+  une date**, à retirer au prochain rafraîchissement des données.
 
 ## GitHub
 

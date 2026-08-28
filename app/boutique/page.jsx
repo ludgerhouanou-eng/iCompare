@@ -1,7 +1,7 @@
 import CategoryTabs from "../../components/CategoryTabs.jsx";
 import ProductCard from "../../components/ProductCard.jsx";
-import { euroMini } from "../../lib/prix.js";
 import { SITE } from "../../lib/site.js";
+import { ficheUrl } from "../../lib/fiches.js";
 import {
   CATEGORIES,
   BOUTIQUE_PRODUCTS,
@@ -9,9 +9,9 @@ import {
   CATALOG_UPDATED,
 } from "../../lib/catalog.js";
 
-const TITLE = "Apple Watch, anciens iPhone, iPad & AirPods : bons prix 2026";
+const TITLE = "Apple Watch, anciens iPhone, iPad & AirPods : la sélection 2026";
 const DESC =
-  "Apple Watch SE 3, Series 11, Ultra 3, anciens iPhone (17e, 16, 15, 13 renewed), iPad A16 & Air M3, AirPods Pro 3 : sélection courte avec prix Amazon vérifiés le 27/08/2026.";
+  "Apple Watch SE 3, Series 11, Ultra 3, anciens iPhone (17e, 16, 15, 13 renewed), iPad A16 & Air M3, AirPods Pro 3 : 15 références sélectionnées, un lien vers la fiche Amazon de chacune pour le prix et le stock du jour.";
 
 export const metadata = {
   title: TITLE,
@@ -57,34 +57,22 @@ const jsonLd = {
       "@type": "ItemList",
       name: "Boutique Apple : sélection d'Apple Watch, iPhone, iPad, AirPods et accessoires",
       numberOfItems: BOUTIQUE_PRODUCTS.length,
-      itemListElement: BOUTIQUE_PRODUCTS.map((p, i) => {
-        // Le prix déclaré à Google est déduit du texte que le lecteur voit :
-        // un second champ de prix écrit à la main (l'ancien `priceValue`)
-        // finissait toujours par diverger de l'affichage — et un écart de prix
-        // entre la page et le JSON-LD, c'est une donnée enrichie refusée.
-        // Aucun prix chiffrable ⇒ pas d'Offer du tout, plutôt qu'un prix inventé.
-        const plancher = euroMini(p.price);
-        const offers = plancher
-          ? {
-              "@type": "Offer",
-              price: String(plancher),
-              priceCurrency: "EUR",
-              availability: "https://schema.org/InStock",
-              url: productLink(p),
-            }
-          : undefined;
-        return {
-          "@type": "ListItem",
-          position: i + 1,
-          item: {
-            "@type": "Product",
-            name: `${p.name} — ${p.sub}`,
-            brand: { "@type": "Brand", name: p.brand || "Apple" },
-            description: p.tagline,
-            ...(offers ? { offers } : {}),
-          },
-        };
-      }),
+      // Products sans `offers` : la page n'affiche plus de montant, et un
+      // prix dans le JSON-LD que le lecteur ne voit pas est une donnée
+      // enrichie en désaccord avec la page (refusée par Google, et de toute
+      // façon hors autorisation chez Amazon sans PA API). On déclare donc la
+      // sélection, et on renvoie vers la fiche qui, elle, assume ses chiffres.
+      itemListElement: BOUTIQUE_PRODUCTS.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Product",
+          name: `${p.name} — ${p.sub}`,
+          brand: { "@type": "Brand", name: p.brand || "Apple" },
+          description: p.tagline,
+          url: `${SITE.url}${ficheUrl(p.id)}`,
+        },
+      })),
     },
   ],
 };
@@ -92,7 +80,7 @@ const jsonLd = {
 const TIPS = [
   {
     title: "Pourquoi acheter un « ancien » iPhone ?",
-    text: "L'iPhone 17e (719 €) et l'iPhone 15 (~650 €) offrent 80 % de l'expérience d'un iPhone 17 pour 250 à 300 € de moins — et tous supportent iOS 26 et Apple Intelligence. L'iPhone 13 « Renewed » (~400 €) est le choix budget étudiant/famille : 90 jours pour changer d'avis + 1 an de garantie via le programme Amazon Renewed.",
+    text: "L'iPhone 17e et l'iPhone 15 offrent l'essentiel d'un iPhone 17 — iOS 26 et Apple Intelligence compris — pour plusieurs centaines d'euros de moins : l'écart exact, seule la fiche Amazon le sait. L'iPhone 13 « Renewed » est le choix budget étudiant/famille : 90 jours pour changer d'avis + 1 an de garantie via le programme Amazon Renewed.",
   },
   {
     title: "Quelle Apple Watch selon votre usage ?",
@@ -100,7 +88,7 @@ const TIPS = [
   },
   {
     title: "Audio : trois niveaux, zéro hésitation",
-    text: "AirPods 4 avec ANC (~160 €) pour le quotidien ; AirPods Pro 3 (198 € ce mois-ci, −20 %) pour la meilleure réduction de bruit du segment et le suivi cardiaque pendant le sport ; AirPods Max 2 (~555 €) pour les auditeurs qui veulent du supra-auriculaire premium. Pensez au chargeur 30 W officiel : il n'est pas toujours inclus.",
+    text: "AirPods 4 avec ANC pour le quotidien ; AirPods Pro 3 pour la meilleure réduction de bruit du segment et le suivi cardiaque pendant le sport — c'est la référence qui était le plus nettement sous son prix de lancement à notre relevé ; AirPods Max 2 pour les auditeurs qui veulent du supra-auriculaire premium. Pensez au chargeur 30 W officiel : il n'est pas toujours inclus.",
   },
 ];
 
@@ -116,7 +104,7 @@ export default function BoutiquePage() {
         <nav className="breadcrumbs" aria-label="Fil d'Ariane">
           <a href="/">Accueil</a> / Boutique Apple
         </nav>
-        <p className="kicker">Boutique · Prix Amazon vérifiés le {CATALOG_UPDATED}</p>
+        <p className="kicker">Boutique · {BOUTIQUE_PRODUCTS.length} références · prix et stock chez Amazon</p>
         <h1>
           L'univers Apple : Apple Watch, anciens iPhone, iPad{" "}
           <span className="grad-text">&amp; AirPods</span>
@@ -126,7 +114,10 @@ export default function BoutiquePage() {
           voici aussi notre sélection courte sur le reste de l'écosystème — montres,
           iPhone des générations précédentes (souvent les plus grosses économies),
           iPad, casques et chargeurs. <strong>{BOUTIQUE_PRODUCTS.length} produits</strong>,
-          prix relevés le {CATALOG_UPDATED}, zéro blabla.
+          chacun avec sa fiche et son lien Amazon. Nous n'affichons pas les montants
+          ici : un prix relevé à la main est périmé en quelques jours, celui
+          d'Amazon est celui du jour. Seule la mention de remise porte notre date
+          ({CATALOG_UPDATED}).
         </p>
       </div>
 

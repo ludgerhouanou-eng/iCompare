@@ -12,6 +12,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
+import { euroMini } from "../lib/prix.js";
 
 const APP = join(".next", "server", "app");
 const TAILLE_MAX_KO = 220; // HTML d'une page, en Ko — au-delà, on a déraillé
@@ -52,7 +53,7 @@ for (const f of htmls) {
 
 const vus = new Map(); // titre -> nb d'apparitions (détection de doublons)
 const descriptions = new Map();
-let comptes = { pages: 0, liensAmazon: 0, fiches: 0, offersVerifiees: 0, liensInternes: 0, jsonLd: 0 };
+let comptes = { pages: 0, liensAmazon: 0, fiches: 0, offersVerifiees: 0, liensInternes: 0, jsonLd: 0, cartesBoutique: 0 };
 
 for (const f of htmls) {
   const rel0 = relative(APP, f);
@@ -124,21 +125,61 @@ for (const f of htmls) {
     }
   }
 
-  // 8. Prix du JSON-LD = minimum de la fourchette affichée sur la même carte
+  // 8a. /boutique n'affiche AUCUN montant : la page sert à orienter vers
+  // Amazon, pas à recopier un prix périmé (Politiques Partenaires FR, section
+  // « Liens présents sur votre site » : un Site ne peut indiquer prix et
+  // disponibilité qu'avec un lien fourni par Amazon ou via la PA API). Et
+  // puisqu'aucun montant n'est visible, aucun ne doit être déclaré à Google.
   if (rel === join("boutique.html")) {
-    for (const m of h.matchAll(/"name":"([^"]+?) — [^"]*","brand".*?"price":"([\d.]+)"/g)) {
-      const [, nom, price] = m;
-      comptes.offersVerifiees += 1;
-      const chunk = new RegExp(`${echapper(nom)}[\\s\\S]{0,600}?price-now[^>]*>([^<]+)<`).exec(h);
-      const affiche = chunk?.[1];
-      const montants = [...(affiche || "").matchAll(/(\d[\d .]*)(?:\s*[–—-]\s*(\d[\d .]*))?/g)]
-        .flatMap((x) => [x[1], x[2]])
-        .filter(Boolean)
-        .map((x) => Number(x.trim().replace(/[ .]/g, "").replace(",", ".")))
-        .filter((n) => Number.isFinite(n) && n > 5);
-      const mini = montants.length ? Math.min(...montants) : null;
-      if (mini !== null && Math.abs(mini - Number(price)) > 0.51) {
-        ajouter(f, `JSON-LD annonce ${price} €, la carte affiche « ${affiche.trim()} » (min ${mini})`);
+    const visible = h
+      .replace(/<script[\s\S]*?<\/script>/g, "")
+      .replace(/<style[\s\S]*?<\/style>/g, "");
+    const cartes = (visible.match(/className="card phone-card"|class="card phone-card"/g) || []).length;
+    const montants = visible.match(/\d[\d .]*[,.]?\d*\s*€/g) || [];
+    comptes.cartesBoutique = cartes;
+    if (cartes === 0) ajouter(f, "aucune carte produit rendue : contrôle de prix neutralisé");
+    if (montants.length) {
+      ajouter(f, `${montants.length} montant(s) en euros sur une page qui ne doit pas en afficher : ${montants.slice(0, 3).join(", ")}`);
+    }
+    if (/"@type":"Offer"/.test(h)) {
+      ajouter(f, "des Offer avec prix dans le JSON-LD alors que la page n'affiche plus de montant");
+    }
+    // Chaque carte doit malgré tout mener quelque part : un « Consulter le prix »
+    // sans lien serait une impasse, et c'est le remplacement direct du prix retiré.
+    const consultations = (visible.match(/Consulter le prix sur Amazon/g) || []).length;
+    if (consultations !== cartes) {
+      ajouter(f, `${cartes} cartes mais ${consultations} bouton « Consulter le prix sur Amazon »`);
+    }
+  }
+
+  // 8b. Fiches produit : le prix déclaré à Google = le minimum du montant
+  // affiché sur la même fiche. euroMini() est importé du site lui-même : un
+  // contrôle qui réimplémenterait la lecture des fourchettes pourrait être
+  // faux sans jamais le montrer.
+  if (estFiche) {
+    for (const m of h.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)) {
+      let donnees;
+      try {
+        donnees = JSON.parse(m[1].replace(/&amp;/g, "&"));
+      } catch {
+        continue; // déjà signalé en 6
+      }
+      const noeuds = (Array.isArray(donnees) ? donnees : donnees["@graph"] ? donnees["@graph"] : [donnees])
+        .flatMap((n) => (n && n["@graph"] ? n["@graph"] : [n]));
+      for (const n of noeuds) {
+        if (!n || n["@type"] !== "Product" || !n.offers || n.offers.price === undefined) continue;
+        // Le montant à recouper est celui de l'encart prix lui-même — pas les
+        // lignes qui le suivent (« −26 % · 189 € sous le prix Apple ») : une
+        // lecture non scopée prenait l'économie pour le prix, d'où le faux
+        // positif à la première exécution de cette règle.
+        const affiche = /prix-box[\s\S]{0,240}?price-now[^>]*>([^<]+)</.exec(h)?.[1] ?? "";
+        comptes.offersVerifiees += 1;
+        const mini = euroMini(affiche);
+        if (mini === null) {
+          ajouter(f, `JSON-LD annonce ${n.offers.price} € mais aucun montant lisible dans l'encart prix`);
+        } else if (Math.abs(mini - Number(n.offers.price)) > 0.51) {
+          ajouter(f, `JSON-LD annonce ${n.offers.price} €, la fiche affiche ${mini} € (montants lus : « ${affiche.trim().slice(0, 60)} »)`);
+        }
       }
     }
   }
@@ -172,7 +213,8 @@ console.log(
     `liens Amazon : ${comptes.liensAmazon}`,
     `liens internes : ${comptes.liensInternes}`,
     `blocs JSON-LD : ${comptes.jsonLd}`,
-    `prix recoupés : ${comptes.offersVerifiees}`,
+    `cartes boutique sans montant : ${comptes.cartesBoutique}`,
+    `prix recoupés sur les fiches : ${comptes.offersVerifiees}`,
     `tag attendu : ${tag ?? "(aucun — AMAZON_TAG=\"\")"}`,
   ].join(" · ")
 );

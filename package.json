@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
-    "check": "node tools/check-build.mjs"
+    "check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/check-build.mjs"
   },
   "dependencies": {
     "next": "^15.5.24",
