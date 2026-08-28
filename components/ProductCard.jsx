@@ -1,6 +1,6 @@
 import ProductGlyph from "./ProductGlyph.jsx";
 import { ficheUrl, getFiche } from "../lib/fiches.js";
-import { PRIX_DATE_FR } from "../lib/prix.js";
+import { AFFICHER_MONTANTS, mentionEcart } from "../lib/prix.js";
 
 /**
  * Carte produit de la boutique — rendue côté serveur, donc présente dans le
@@ -48,12 +48,21 @@ export default function ProductCard({ product, urlAffilie }) {
       <p className="product-tagline">{product.tagline}</p>
 
       <div className="phone-price">
-        {reduction && (
-          <span className="price-remise">
-            −{reduction.pourcent} % relevés le {PRIX_DATE_FR}, sous le prix de lancement Apple
-          </span>
+        {AFFICHER_MONTANTS ? (
+          <>
+            <span className="price-now">{product.price}</span>
+            <span className="price-note">{product.priceNote}</span>
+          </>
+        ) : (
+          <>
+            {reduction && (
+              <span className="price-remise">{mentionEcart(reduction)}</span>
+            )}
+            <span className="price-note">
+              Prix et disponibilité : seuls ceux affichés par Amazon font foi
+            </span>
+          </>
         )}
-        <span className="price-note">Prix et disponibilité : seuls ceux affichés par Amazon font foi</span>
       </div>
 
       <div className="card-actions">

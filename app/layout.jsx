@@ -18,7 +18,7 @@ export const metadata = {
     template: "%s | iCompare",
   },
   description:
-    "Fiches techniques comparées, prix Amazon vérifiés et verdicts clairs : trouvez le bon iPhone (16, 17, 18…) en 2026, sans noyade technique.",
+    "Fiches techniques comparées, écarts au prix Apple relevés à date et verdicts clairs : trouvez le bon iPhone (16, 17, 18…) en 2026, sans noyade technique.",
   keywords: [
     "comparatif iphone",
     "iphone 16",
@@ -81,7 +81,8 @@ export default function RootLayout({ children }) {
                 </a>
                 <p>
                   Le comparateur iPhone qui va droit au but : fiches techniques comparées,
-                  prix Amazon vérifiés et verdicts sans blabla. Mis à jour régulièrement.
+                  écarts au prix Apple relevés à date et verdicts sans blabla. Les montants,
+                  seul Amazon les affiche.
                 </p>
               </div>
               <div>

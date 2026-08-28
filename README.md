@@ -31,14 +31,15 @@ reçoit** : il lit le HTML statique sorti par Next et vérifie, page par page �
   sans `?tag=` vide ;
 - aucun `href="null"` (produit non vendu → bouton masqué, pas lien cassé) ;
 - chaque bloc JSON-LD parsable ;
-- **`/boutique` sans aucun montant** : zéro « € » dans le HTML visible, aucune
-  `Offer` dans le JSON-LD de cette page, et 15 boutons « Consulter le prix sur
-  Amazon » pour 15 cartes rendues (un compteur est imprimé : une règle qui
-  n'examine rien ne peut pas passer au vert) ;
-- sur chaque fiche produit, le prix de l'`Offer` égal au minimum du montant
-  affiché dans l'encart prix — `euroMini()` est **importée de `lib/prix.js`**,
-  pas réécrite dans le contrôle : un test qui réimplémente la logique du site
-  ne teste que lui-même ;
+- **aucune page avec un montant** : zéro « € » dans le HTML visible des 21
+  pages, aucune `Offer` (ni `AggregateOffer`) dans les JSON-LD, aucun
+  `InStock` — et 15 boutons « Consulter le prix sur Amazon » pour 15 cartes
+  rendues sur `/boutique`. La règle lit le drapeau `AFFICHER_MONTANTS` de
+  `lib/prix.js`, celui-là même que lisent les gabarits ; avec `SHOW_PRICES=1`,
+  elle bascule et recontrôle que chaque `Offer` égale le minimum du montant
+  affiché sur la même page, `euroMini()` étant **importée de `lib/prix.js`**
+  et non réécrite ici (un test qui réimplémente la logique du site ne teste
+  que lui-même) ;
 - chaque lien interne correspondant à une page réellement construite ;
 - aucun poids de page anormal (> 220 Ko : signe qu'une page mérite d'être
   découpée) et aucun placeholder (`votretag`, `votredomaine`) dans le HTML.
@@ -55,8 +56,10 @@ signalé.
 2. vercel.com → *Add New… → Project* → connectez votre GitHub → importez le dépôt.
 3. Vercel détecte automatiquement Next.js → **Deploy**.
 4. Le site est en ligne sur `https://<projet>.vercel.app`.
-5. **Important** : mettez à jour `lib/site.js` → `SITE.url` avec votre URL Vercel
-   (ou votre futur domaine), puis repoussez sur GitHub (déploiement auto).
+5. **Important** : `SITE.url` retombe déjà sur `https://icomparev2.vercel.app`
+   (le domaine de production). Le jour où un domaine personnel pointe ici,
+   réglez `SITE_URL` dans Vercel → *Settings → Environment Variables* — rien à
+   repousser, un redéploiement suffit.
 
 **B. Via le CLI**
 ```bash
@@ -65,7 +68,11 @@ vercel        # première fois : configuration interactive
 vercel --prod # mise en production
 ```
 
-Aucune variable d'environnement nécessaire.
+Aucune variable d'environnement n'est nécessaire pour publier : les valeurs par
+défaut de `lib/site.js` et `lib/prix.js` sont celles de la production. Trois
+surcharges existent — `SITE_URL` (domaine), `AMAZON_TAG` (identifiant
+partenaire du marché lié), `AMAZON_DOMAIN` (marché) — plus `SHOW_PRICES=1`, qui
+réaffiche les montants **uniquement** une fois la PA API branchée derrière.
 
 ## Structure
 
@@ -73,10 +80,10 @@ Aucune variable d'environnement nécessaire.
 app/
   layout.jsx          → header, nav, footer, métas globales
   page.jsx            → Accueil (/) : hero + DIAPORAMA + 3 cartes iPhone
-  comparatif/page.jsx → Page SEO principale : 35 specs, prix, rumeurs, FAQ
+  comparatif/page.jsx → Page SEO principale : 35 specs, écarts datés, rumeurs, FAQ
   boutique/page.jsx   → 15 produits, 5 onglets (Watch, iPhone, iPad, audio, accessoires)
   globals.css         → design system (blanc + teintes bleu/rose)
-  sitemap.js          → 3 URL (utilise SITE.url)
+  sitemap.js          → 21 URL (utilise SITE.url)
   robots.js           → robots.txt + lien vers le sitemap
 components/
   HeroSlider.jsx      → diaporama (auto, flèches, points, swipe)
@@ -312,11 +319,11 @@ Mesuré sur le build statique, `comparatif.html` passe de **185,1 Ko à 158 Ko**
 vraiment le réseau — la page boutique est à parité (14,1 contre 14,5 Ko) tout
 en restant lisible sans JavaScript.
 
-### La boutique n'affiche pas de prix
+### Aucun montant sur les 21 pages
 
-Choix demandé par l'éditeur, et imposé par le règlement : les Politiques du
-Programme Partenaires Amazon FR (« Liens présents sur votre site », mise à jour
-du 14 avril 2026) limitent ainsi l'affichage des prix :
+Choix de l'éditeur, et obligation du règlement : les Politiques du Programme
+Partenaires Amazon FR (« Liens présents sur votre site », mise à jour du
+14 avril 2026) limitent ainsi l'affichage des prix :
 
 > « Sachant que la disponibilité et les prix des Produits que vous avez
 > répertoriés sur votre Site sont susceptibles de changer, votre Site peut
@@ -325,17 +332,37 @@ du 14 avril 2026) limitent ainsi l'affichage des prix :
 > prix et la disponibilité des Produits via une PA API […]. »
 
 Les montants de ce dépôt viennent d'un relevé manuel : ils ne remplissent ni
-(a) ni (b). La même page d'aide impose par ailleurs de retirer « dès la fin de
-la promotion » toute mention de remise limitée dans le temps — ce qu'un build
-statique ne sait pas détecter. `/boutique` ne montre donc **aucun montant** :
-chaque carte porte un bouton « Consulter le prix sur Amazon » (le prix vient
-d'Amazon, il est donc toujours juste) et, s'il y a lieu, un rappel daté en
-écart au prix de lancement Apple — un fait historique, qui ne se périme pas.
+(a) ni (b). La même page impose par ailleurs de retirer « dès la fin de la
+promotion » toute mention de remise limitée dans le temps — ce qu'un build
+statique ne sait pas détecter. **Aucune page n'affiche donc de prix** : ni
+`/`, ni `/comparatif`, ni `/boutique`, ni `/bons-plans`, ni les 17 fiches.
 
-Ce que cela coûte : les 15 cartes ne sont plus éligibles au résultat enrichi
-« Marchandises » (aucun `Offer` déclaré). C'est le prix de la conformité, et il
-ne touche ni `/comparatif` ni `/bons-plans` ni les fiches produit, qui
-assument leurs montants datés — étendez la règle si vous voulez l'uniformiser.
+Ce qui reste affiché, et pourquoi c'est défendable :
+
+- **un écart daté** — « −23 % sous le prix de lancement Apple, relevés le
+  27 août 2026 ». Un fait historique, pas une offre en cours ; la date est
+  rappelée à côté, et le bandeau d'alerte de vétusté (`PRIX_VETUSTE_MAX_JOURS`)
+  prévient quand le relevé n'a plus à être cru ;
+- **un bouton** — « Consulter le prix sur Amazon » sur chaque produit : le
+  montant vient d'Amazon, il est donc toujours juste au moment du clic ;
+- **aucune disponibilité affirmée** : le `availability: InStock` que
+  déclaraient 17 pages a été retiré, la page d'aide soumet la disponibilité à
+  la même restriction que le prix, et un build ne peut pas savoir ce qui est en
+  stock le jour où le lecteur clique.
+
+Ce que cela coûte, à connaître : les pages ne sont plus éligibles aux résultats
+enrichis « Marchandises » (plus de `Offer` du tout), et un internaute qui
+compare deux ongles d'œil sur la page doit cliquer pour voir les montants. Les
+données, elles, ne sont pas supprimées : `price`, `priceNote`, `priceNow`,
+`priceLaunch` restent dans `lib/catalog.js` et `lib/products.js`, parce que
+c'est là que l'écart est calculé.
+
+**Pour tout réafficher** (le jour où la PA API est branchée) : `SHOW_PRICES=1`
+comme variable d'environnement de build. Un seul drapeau, dans `lib/prix.js`
+(`AFFICHER_MONTANTS`), lu à la fois par les gabarits et par `npm run check` —
+les pages et le contrôle basculent ensemble, ils ne peuvent pas se contredire.
+Dans ce mode, le contrôle redevient ce qu'il était : recoupement de chaque
+`Offer` avec le montant affiché sur la même page (16 prix vérifiés).
 
 ### Un seul prix par produit
 
@@ -354,13 +381,22 @@ simplement **pas d'`Offer`** plutôt qu'un prix inventé. Le contrôle
 `npm run check` recoupe les deux et échoue si jamais ils se remettent à
 diverger.
 
+Pareil pour les tableaux : « Prix de lancement » et « Prix constaté » étaient
+tapés **deux fois**, une fois dans `QUICK_ROWS` (tableau rapide) et une fois
+dans `SPEC_GROUPS` (fiche technique). Les deux lignes sont sorties de là pour
+devenir `LIGNES_MONTANTS`, une seule définition, affichée seulement avec
+`SHOW_PRICES=1` ; à la place, les deux tableaux partagent `LIGNE_ECART`, dont
+les pourcentages sont **calculés** sur les montants (`ecartProduit`), pas
+recopiés à la main.
+
 ## SEO inclus
 
 - Meta descriptions + Open Graph + Twitter Card sur les 3 pages
-- JSON-LD : BreadcrumbList partout ; ItemList de Products **sans offers** sur
-  `/boutique` (aucun prix affiché sur la page) ; Product + Offer sur les fiches
-  qui affichent un montant ; FAQPage (7 questions) ; ItemList + AggregateOffer sur
-  le comparatif
+- JSON-LD : BreadcrumbList partout ; Product (sans `offers`, puisque la page
+  n'affiche aucun montant) sur la boutique, le comparatif et les 17 fiches ;
+  FAQPage (7 questions) ; ItemList sur les bons plans. Aucun prix, aucune
+  disponibilité déclarés aux moteurs : ce qui n'est pas visible ne doit pas
+  être déclaré
 - Sitemap XML + robots.txt (routes Next.js natives)
 - Balises canonical ; montants datés sur les pages qui en affichent
 - Rumeurs iPhone 18 sourcées et étiquetées (pas de contenu inventé)
@@ -371,8 +407,9 @@ diverger.
 - Disclosure visible en haut de chaque page + footer (« Partenaire Amazon »).
 - Liens produits : `target="_blank" rel="sponsored nofollow noopener"`.
 - Jamais « Amazon » dans les `<title>`.
-- Pas de prix hors PA API en boutique ; ailleurs, montant daté du relevé
-  (champs `UPDATED` dans `lib/*.js`) et jamais présenté comme le prix du jour.
+- Aucun prix et aucune disponibilité affichés hors PA API ; à la place, un
+  écart au prix de lancement daté (champs `UPDATED`/`PRIX_DATE_FR`) et un lien
+  vers la fiche Amazon, seule source du montant du jour.
 - Aucune promotion affichée comme « en cours » : seule une remise **constatée à
   une date**, à retirer au prochain rafraîchissement des données.
 

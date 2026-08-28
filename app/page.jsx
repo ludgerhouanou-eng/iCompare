@@ -5,10 +5,10 @@ import { PRODUCTS, VERDICTS, FAQS, productLink, UPDATED } from "../lib/products.
 import { CATEGORIES, BOUTIQUE_PRODUCTS } from "../lib/catalog.js";
 import { SITE } from "../lib/site.js";
 import { ficheUrl } from "../lib/fiches.js";
-import { PRIX_DATE_ISO } from "../lib/prix.js";
+import { PRIX_DATE_ISO, AFFICHER_MONTANTS, mentionEcart, ecartProduit } from "../lib/prix.js";
 
 const HOME_DESC =
-  "Comparez iPhone 16, 17 et 18 : fiches techniques, prix Amazon vérifiés, verdicts et conseils d'achat. Trouvez le bon iPhone en 2026 sans vous tromper.";
+  "Comparez iPhone 16, 17 et 18 : fiches techniques, écarts au prix Apple, verdicts et conseils d'achat. Trouvez le bon iPhone en 2026 sans vous tromper.";
 
 export const metadata = {
   title: "Comparateur iPhone 2026 : iPhone 16, 17 & 18 comparés",
@@ -89,8 +89,16 @@ function PhoneCard({ p }) {
           ))}
         </ul>
         <div className="phone-price">
-          <span className="price-now">{p.available ? p.priceNow : "Non commercialisé"}</span>
-          <span className="price-note">{p.priceNote}</span>
+          {AFFICHER_MONTANTS ? (
+            <>
+              <span className="price-now">{p.available ? p.priceNow : "Non commercialisé"}</span>
+              <span className="price-note">{p.priceNote}</span>
+            </>
+          ) : mentionEcart(ecartProduit(p)) ? (
+            <span className="price-remise">{mentionEcart(ecartProduit(p))}</span>
+          ) : (
+            <span className="price-note">Produit non commercialisé : rien à comparer</span>
+          )}
         </div>
         {p.available ? (
           <a
@@ -99,7 +107,7 @@ function PhoneCard({ p }) {
             target="_blank"
             rel="sponsored nofollow noopener"
           >
-            Voir le prix sur Amazon
+            Consulter le prix sur Amazon
           </a>
         ) : (
           <span className="btn btn-disabled btn-block">Précommandes : printemps 2027</span>
@@ -121,14 +129,15 @@ export default function Home() {
       />
       <section className="hero">
         <div className="container">
-          <p className="kicker">Comparateur iPhone · Prix vérifiés le {UPDATED}</p>
+          <p className="kicker">Comparateur iPhone · relevé iCompare du {UPDATED}</p>
           <h1>
             iPhone 16, 17 ou 18 ?
             <br />
             <span className="grad-text">Le bon iPhone, au bon prix.</span>
           </h1>
           <p className="hero-sub">
-            Fiches techniques comparées, verdicts clairs et prix Amazon vérifiés.
+            Fiches techniques comparées, verdicts clairs, et le prix qui compte affiché par
+            Amazon au moment du clic.
             Trouvez l'iPhone fait pour vous en 3 minutes — sans noyade technique.
           </p>
           <div className="hero-ctas">
@@ -241,7 +250,7 @@ export default function Home() {
           <h2 className="section-title">Et le reste de l'écosystème ?</h2>
           <p className="section-sub">
             Apple Watch, anciens iPhone, iPad, AirPods et accessoires : la même méthode —
-            sélection courte, prix Amazon vérifiés le {UPDATED}, liens affiliés.
+            sélection courte, un lien direct vers la fiche Amazon de chaque référence.
           </p>
           <div className="grid-5">
             {CATEGORIES.map((c) => {

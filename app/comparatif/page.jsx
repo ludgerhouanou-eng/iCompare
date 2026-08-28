@@ -5,6 +5,7 @@ import FaqItem from "../../components/FaqItem.jsx";
 import Disclosure from "../../components/Disclosure.jsx";
 import BuyBar from "../../components/BuyBar.jsx";
 import { SITE } from "../../lib/site.js";
+import { AFFICHER_MONTANTS, PRIX_VETUSTE_MAX_JOURS, mentionEcart, ecartProduit } from "../../lib/prix.js";
 import {
   PRODUCTS,
   VERDICTS,
@@ -16,9 +17,9 @@ import {
   productLink,
 } from "../../lib/products.js";
 
-const TITLE = "iPhone 16 vs 17 vs 18 : comparatif 2026, fiches techniques & prix";
+const TITLE = "iPhone 16 vs 17 vs 18 : comparatif 2026, fiches techniques & verdict";
 const DESC =
-  "iPhone 16, 17 ou 18 ? Fiches techniques comparées, prix Amazon vérifiés le 27/08/2026, rumeurs iPhone 18 et notre verdict : quel iPhone choisir en 2026 ?";
+  "iPhone 16, 17 ou 18 ? Fiches techniques comparées, écarts au prix Apple relevés le 27/08/2026, rumeurs iPhone 18 et notre verdict : quel iPhone choisir en 2026 ?";
 
 export const metadata = {
   title: TITLE,
@@ -80,14 +81,6 @@ const jsonLd = {
             description:
               "Puce A18, écran 6,1″ Super Retina XDR (2 000 nits), double caméra 48 + 12 MP, jusqu'à 22 h de vidéo, 170 g.",
             image: [`${SITE.url}/hero.jpg`],
-            offers: {
-              "@type": "AggregateOffer",
-              priceCurrency: "EUR",
-              lowPrice: "750",
-              highPrice: "820",
-              offerCount: "4",
-              availability: "https://schema.org/InStock",
-            },
           },
         },
         {
@@ -100,14 +93,6 @@ const jsonLd = {
             description:
               "Puce A19, écran 6,3″ ProMotion 120 Hz (3 000 nits, Always-On), double caméra 48 MP, jusqu'à 30 h de vidéo, 177 g.",
             image: [`${SITE.url}/hero.jpg`],
-            offers: {
-              "@type": "AggregateOffer",
-              priceCurrency: "EUR",
-              lowPrice: "859",
-              highPrice: "969",
-              offerCount: "5",
-              availability: "https://schema.org/InStock",
-            },
           },
         },
         {
@@ -140,7 +125,7 @@ const PROFILES = [
     title: "Budget serré / étudiant",
     pick: "iPhone 16",
     tone: "green",
-    text: "Sous 800 €, c'est l'iPhone qui offre le plus pour le moins : A18, 48 MP, et encore 3 à 4 ans de mises à jour devant lui.",
+    text: "C'est le plus abordable du trio : A18, 48 MP, et encore 3 à 4 ans de mises à jour devant lui.",
   },
   {
     title: "Le choix sans regret",
@@ -210,7 +195,7 @@ export default function ComparatifPage() {
           <p className="lead">
             <strong>Réponse rapide :</strong> l'<a href="#verdict">iPhone 17</a> est le meilleur
             choix global en 2026 (écran 120 Hz, double 48 MP, 30 h d'autonomie) ; l'
-            <a href="#verdict">iPhone 16</a> reste le roi du rapport qualité-prix dès ~750 € ;
+            <a href="#verdict">iPhone 16</a> reste le plus abordable des trois ;
             l'iPhone 18 standard, attendu au <a href="#iphone-18">printemps 2027</a> avec sa
             puce A20 gravée en 2 nm, n'a pas de raison de vous faire attendre.
           </p>
@@ -274,7 +259,7 @@ export default function ComparatifPage() {
                         target="_blank"
                         rel="sponsored nofollow noopener"
                       >
-                        Voir le prix sur Amazon
+                        Consulter le prix sur Amazon
                       </a>
                     ) : (
                       <a className="btn btn-ghost btn-sm" href="#iphone-18">
@@ -305,7 +290,7 @@ export default function ComparatifPage() {
             />
             <p className="table-legend">
               ★ = meilleure valeur dans la ligne · valeurs en italique = rumeurs non officielles
-              (iPhone 18) · prix relevés le {UPDATED} sur Amazon.
+              (iPhone 18) · écarts au prix Apple relevés le {UPDATED}.
             </p>
           </div>
         </section>
@@ -399,8 +384,23 @@ export default function ComparatifPage() {
                   <span className={`badge badge-${p.badge.tone} badge-xs`}>{p.badge.label}</span>
                   <h3>{p.name}</h3>
                   <div>
-                    <span className="price-big">{p.priceDisplay}</span>
-                    <span className="price-note">{p.priceNote}</span>
+                    {AFFICHER_MONTANTS ? (
+                      <>
+                        <span className="price-big">{p.priceDisplay}</span>
+                        <span className="price-note">{p.priceNote}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="price-big price-big-mention">
+                          {mentionEcart(ecartProduit(p)) ?? "Non commercialisé"}
+                        </span>
+                        <span className="price-note">
+                          {p.available
+                            ? "Montant et disponibilité : sur la fiche Amazon"
+                            : "Aucun prix officiel avant l’annonce"}
+                        </span>
+                      </>
+                    )}
                   </div>
                   {p.available ? (
                     <a
@@ -409,7 +409,7 @@ export default function ComparatifPage() {
                       target="_blank"
                       rel="sponsored nofollow noopener"
                     >
-                      Voir le prix sur Amazon
+                      Consulter le prix sur Amazon
                     </a>
                   ) : (
                     <span className="btn btn-disabled btn-block">
@@ -426,7 +426,7 @@ export default function ComparatifPage() {
                 <li>Retours gratuits sous 30 jours</li>
                 <li>Paiement en plusieurs fois 0 % possible</li>
                 <li>La boutique officielle Apple est présente sur Amazon</li>
-                <li>Prix régulièrement sous le tarif conseillé</li>
+                <li>Les modèles sortis passent souvent sous le tarif conseillé</li>
                 <li>Paiement sécurisé : Apple Pay ou carte bancaire</li>
               </ul>
             </div>
@@ -444,8 +444,8 @@ export default function ComparatifPage() {
               <div>
                 <h3 style={{ margin: "0 0 4px" }}>Complétez votre setup Apple</h3>
                 <p style={{ margin: 0, color: "var(--text-2)", fontSize: 14.5 }}>
-                  Apple Watch, AirPods, iPad et anciens iPhone : la sélection boutique avec
-                  les prix du {UPDATED}.
+                  Apple Watch, AirPods, iPad et anciens iPhone : la sélection boutique,
+                  un lien vers la fiche Amazon de chaque référence.
                 </p>
               </div>
               <a className="btn btn-ghost btn-sm" href="/boutique">
@@ -531,7 +531,9 @@ export default function ComparatifPage() {
                 <strong>iPhone 16 et iPhone 17 :</strong> chaque caractéristique provient des
                 fiches techniques officielles d'Apple, recoupées avec les tests et mesures de la
                 presse spécialisée (Les Numériques, Frandroid, Phototrend, etc.). Les prix sont
-                relevés sur Amazon.fr et la date de relevé est indiquée.
+                relevés à la main sur Amazon.fr pour en tirer un écart au prix de lancement, daté ;
+                le montant lui-même n'est pas recopié ici — hors API Amazon, nous n'aurions pas le
+                droit de l'afficher, et il serait faux dans la semaine.
               </p>
               <p>
                 <strong>iPhone 18 :</strong> produit non officiel. Nous nous appuyons sur les
@@ -541,9 +543,11 @@ export default function ComparatifPage() {
                 explicitement marquée « rumeur » ou « attendu ».
               </p>
               <p>
-                <strong>Fréquence de mise à jour :</strong> les prix sont revérifiés
-                régulièrement, et la section iPhone 18 sera actualisée dès la keynote d'Apple
-                (attendue début septembre 2026).
+                <strong>Fréquence de mise à jour :</strong> les relevés sont refaits avant chaque
+                publication, et la date du dernier est rappelée sur chaque page — une page dont le
+                relevé dépasse {PRIX_VETUSTE_MAX_JOURS} jours s'affiche elle-même en alerte. La
+                section iPhone 18 sera actualisée dès la keynote d'Apple (attendue début
+                septembre 2026).
               </p>
             </div>
           </div>

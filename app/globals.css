@@ -510,6 +510,18 @@ td.col-rumor, th.col-rumor { background: #fdf0f8; }
 .price-card { display: flex; flex-direction: column; gap: 12px; }
 .price-card h3 { margin: 0; }
 .price-big { font-size: 26px; font-weight: 780; letter-spacing: -0.02em; }
+/* Là où un montant de 26 px tenait en quatre caractères, une phrase de
+   soixante ne peut pas prendre la même taille : même place dans la mise en
+   page, gabarit différent. Vert = écart constaté, pas prix affiché. */
+.price-now-mention,
+.price-big-mention {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  color: var(--green);
+}
+.eco-grand { font-size: 15.5px; font-weight: 700; }
 .price-card .btn { margin-top: auto; }
 .usp-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 24px; }
 .usp-list li { padding-left: 26px; position: relative; color: var(--text-2); font-size: 14.5px; }

@@ -11,6 +11,8 @@ import {
 import {
   PRIX_DATE_ISO,
   PRIX_DATE_FR,
+  AFFICHER_MONTANTS,
+  mentionEcart,
   dateGeneration,
   joursDepuisReleve,
   prixPerime,
@@ -58,9 +60,11 @@ function descriptionDe(fiche) {
   const parts = [
     fiche.sousTitre ? `${fiche.nom} — ${fiche.sousTitre.trim().replace(/\.$/, "")}.` : `${fiche.nom}.`,
     fiche.vente
-      ? fiche.reduction
-        ? `Prix relevé le ${PRIX_DATE_FR} : ${fiche.prix}, soit ${fiche.reduction.pourcent} % sous le prix de lancement (${fiche.reduction.lancement} €).`
-        : `Prix relevé le ${PRIX_DATE_FR} : ${fiche.prix}.`
+      ? AFFICHER_MONTANTS
+        ? fiche.reduction
+          ? `Prix relevé le ${PRIX_DATE_FR} : ${fiche.prix}, soit ${fiche.reduction.pourcent} % sous le prix de lancement (${fiche.reduction.lancement} €).`
+          : `Prix relevé le ${PRIX_DATE_FR} : ${fiche.prix}.`
+        : `${mentionEcart(fiche.reduction) ?? "Pas d’écart relevé avec son prix de lancement"}. Montant et disponibilité affichés par Amazon sur la fiche du produit.`
       : "Produit non commercialisé à ce jour : aucun lien d'achat n'est proposé.",
     fiche.specs.length
       ? "Fiche technique complète, verdict iCompare et où le trouver."
@@ -80,18 +84,20 @@ function schemaLd(fiche) {
   };
   if (fiche.asin) product.sku = fiche.asin;
 
-  const plancher = prixPlancher(fiche);
+  // Aucune Offer, même avec un lien valide : la page n'affiche plus de montant,
+  // et « InStock » affirmait une disponibilité que le build ne peut pas savoir.
+  // Les deux ne reviennent qu'avec SHOW_PRICES=1, c'est-à-dire avec la PA API
+  // derrière (Google pénalise un prix déclaré qui n'apparaît pas sur la page).
+  const plancher = AFFICHER_MONTANTS ? prixPlancher(fiche) : null;
   if (fiche.vente && fiche.urlAffilie && plancher) {
     product.offers = {
       "@type": "Offer",
       url: fiche.urlAffilie,
       priceCurrency: "EUR",
       price: String(plancher),
-      availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
     };
   } else {
-    // Ni prix fiable ni lien : on n'invente pas d'Offer (Google les pénalise).
     product.offers = undefined;
   }
 
@@ -145,7 +151,7 @@ export default async function FicheProduit({ params }) {
           / {fiche.nom}
         </nav>
         <p className="kicker">
-          Fiche produit · prix Amazon relevés le {PRIX_DATE_FR}
+          Fiche produit · relevé iCompare du {PRIX_DATE_FR}, prix affiché par Amazon
         </p>
         <h1>{fiche.nom}</h1>
         <p className="lead">{fiche.sousTitre}</p>
@@ -183,14 +189,29 @@ export default async function FicheProduit({ params }) {
               )}
 
               <div className="prix-box">
-                <span className="price-now">{fiche.prixAffiche}</span>
-                {fiche.reduction && (
-                  <span className="eco">
-                    −{fiche.reduction.pourcent} % · {fiche.reduction.euros} € sous le prix Apple de{" "}
-                    {fiche.reduction.lancement} €
-                  </span>
+                {AFFICHER_MONTANTS ? (
+                  <>
+                    <span className="price-now">{fiche.prixAffiche}</span>
+                    {fiche.reduction && (
+                      <span className="eco">
+                        −{fiche.reduction.pourcent} % · {fiche.reduction.euros} € sous le prix Apple
+                        de {fiche.reduction.lancement} €
+                      </span>
+                    )}
+                    <span className="price-note">{fiche.prixNote}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="price-now price-now-mention">
+                      {mentionEcart(fiche.reduction) ?? "Prix affiché par Amazon"}
+                    </span>
+                    <span className="price-note">
+                      {fiche.vente
+                        ? "Le montant du jour, seul Amazon en a un : bouton ci-dessous."
+                        : "Aucun montant n’est publié avant la commercialisation du produit."}
+                    </span>
+                  </>
                 )}
-                <span className="price-note">{fiche.prixNote}</span>
               </div>
 
               {fiche.vente && fiche.urlAffilie ? (
@@ -200,7 +221,7 @@ export default async function FicheProduit({ params }) {
                   target="_blank"
                   rel="sponsored nofollow noopener"
                 >
-                  Voir le prix sur Amazon
+                  Consulter le prix sur Amazon
                 </a>
               ) : (
                 <span className="btn btn-disabled btn-block">
@@ -242,8 +263,9 @@ export default async function FicheProduit({ params }) {
 
           {perime && (
             <p className="note-box" role="note">
-              <strong>À revérifier :</strong> relevé du {PRIX_DATE_FR}, il y a {age} jours. Montant à
-              contrôler sur la fiche Amazon avant d'acheter.
+              <strong>À revérifier :</strong> l&#39;écart affiché ci-dessus vient d&#39;un relevé du{" "}
+              {PRIX_DATE_FR}, il y a {age} jours — une promotion Amazon prend fin sans nous prévenir.
+              Seul le montant affiché par Amazon sur la fiche fait foi.
             </p>
           )}
 
@@ -318,7 +340,15 @@ export default async function FicheProduit({ params }) {
                 <li key={v.slug} className="card voisin">
                   <a href={ficheUrl(v.slug)}>
                     <strong>{v.nom}</strong>
-                    <span className="price-note">{v.prixAffiche}</span>
+                    {AFFICHER_MONTANTS ? (
+                      <span className="price-note">{v.prixAffiche}</span>
+                    ) : (
+                      <span className="price-note">
+                        {v.reduction
+                          ? `−${v.reduction.pourcent} % sous le prix Apple au relevé`
+                          : "Notice complète, prix chez Amazon"}
+                      </span>
+                    )}
                     {v.reduction && <span className="eco">−{v.reduction.pourcent} %</span>}
                   </a>
                 </li>

@@ -1,4 +1,5 @@
 import { PRODUCTS, QUICK_ROWS, SPEC_GROUPS, UPDATED } from "../lib/products.js";
+import { AFFICHER_MONTANTS, ecartProduit } from "../lib/prix.js";
 import { ficheUrl } from "../lib/fiches.js";
 
 export default function SpecTable({ groups, compact = false }) {
@@ -23,7 +24,19 @@ export default function SpecTable({ groups, compact = false }) {
                     <a href={ficheUrl(p.id)}>{p.name}</a>
                   </span>
                   {p.rumored && <span className="badge badge-purple badge-xs">Rumeurs</span>}
-                  <span className="spec-head-price">{p.priceNow}</span>
+                  {AFFICHER_MONTANTS ? (
+                    <span className="spec-head-price">{p.priceNow}</span>
+                  ) : (
+                    // La date est dans la légende du tableau, juste en dessous :
+                    // un en-tête de colonne n'a pas la place de la porter.
+                    <span className="spec-head-price">
+                      {p.rumored
+                        ? "non commercialisé"
+                        : ecartProduit(p)
+                          ? `−${ecartProduit(p).pourcent} % vs Apple`
+                          : "au prix conseillé"}
+                    </span>
+                  )}
                 </div>
               </th>
             ))}

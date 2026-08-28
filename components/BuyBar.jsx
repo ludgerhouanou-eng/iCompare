@@ -18,10 +18,10 @@ export default function BuyBar() {
             rel="sponsored nofollow noopener"
           >
             <PhoneSVG id={`bb-${p.id}`} color={p.color} colorDark={p.colorDark} height={26} label="" />
-            {p.name} — voir le prix
+            {p.name} — consulter le prix
           </a>
         ))}
-        <span className="buybar-note">Liens affiliés Amazon · Prix vérifiés le {UPDATED}</span>
+        <span className="buybar-note">Liens affiliés Amazon · montants affichés par Amazon, relevé iCompare du {UPDATED}</span>
       </div>
     </div>
   );

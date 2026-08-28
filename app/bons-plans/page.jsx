@@ -1,4 +1,5 @@
 import { SITE, offresLink } from "../../lib/site.js";
+import { AFFICHER_MONTANTS, mentionEcart } from "../../lib/prix.js";
 import { FICHES_PROMO, FICHES_EN_VENTE, ficheUrl } from "../../lib/fiches.js";
 import {
   PRIX_DATE_FR,
@@ -18,7 +19,7 @@ export const metadata = {
     url: `${SITE.url}/bons-plans`,
     siteName: SITE.name,
     title: "Bons plans Apple — iCompare",
-    description: `Remises relevées le ${PRIX_DATE_FR} sur Amazon : montants, économies et liens d'achat.`,
+    description: `Écarts relevés le ${PRIX_DATE_FR} par rapport aux prix de lancement Apple : tri, dates et liens vers la fiche Amazon de chaque référence.`,
     images: [{ url: "/og-comparatif.jpg", width: 1200, height: 675, alt: "Bons plans Apple iCompare" }],
   },
 };
@@ -59,8 +60,9 @@ export default function BonsPlans() {
         </h1>
         <p className="lead">
           Sur {FICHES_EN_VENTE.length} références suivies, {FICHES_PROMO.length} passent sous leur prix
-          Apple. Remise moyenne relevée : <strong>{ecoMoyenne} %</strong>. Triées par économie réelle,
-          en euros — pas par « promo » déclarée.
+          Apple. Écart moyen relevé : <strong>{ecoMoyenne} %</strong>. Triées par écart constaté, pas
+          par « promo » déclarée — et sans montant recopié : le prix qui compte est celui qu’Amazon
+          affiche au moment du clic.
         </p>
       </div>
 
@@ -69,8 +71,8 @@ export default function BonsPlans() {
           {perime ? (
             <p className="note-box" role="alert">
               <strong>Cette page est à rafraîchir :</strong> le relevé date de {age} jours (seuil de
-              fiabilité : {PRIX_VETUSTE_MAX_JOURS} jours). Les montants ci-dessous ne doivent plus être
-              pris comme un prix. Dernière génération du site : {dateGeneration()}.
+              fiabilité : {PRIX_VETUSTE_MAX_JOURS} jours). Les écarts ci-dessous ne doivent plus être
+              pris comme une remise en cours. Dernière génération du site : {dateGeneration()}.
             </p>
           ) : (
             <p className="note-box note-ok">
@@ -93,16 +95,24 @@ export default function BonsPlans() {
                     <a href={ficheUrl(f.slug)}>{f.nom}</a>
                   </h2>
                   <p className="deal-sub">{f.atouts.join(" · ")}</p>
-                  <p className="price-note">{f.prixNote}</p>
                 </div>
                 <div className="deal-price">
-                  <span className="price-now">{f.prixAffiche}</span>
-                  <span className="eco">
-                    −{f.reduction.pourcent} % · {f.reduction.euros} € sous les {f.reduction.lancement} € Apple
-                  </span>
-                  <span className="price-note">
-                    Lancement : {f.reduction.lancement} €
-                  </span>
+                  {AFFICHER_MONTANTS ? (
+                    <>
+                      <span className="price-now">{f.prixAffiche}</span>
+                      <span className="eco">
+                        −{f.reduction.pourcent} % · {f.reduction.euros} € sous les{" "}
+                        {f.reduction.lancement} € Apple
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="eco eco-grand">{mentionEcart(f.reduction)}</span>
+                      <span className="price-note">
+                        Le montant du jour, seul Amazon l’a
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="deal-cta">
                   {f.urlAffilie && (
@@ -112,7 +122,7 @@ export default function BonsPlans() {
                       target="_blank"
                       rel="sponsored nofollow noopener"
                     >
-                      Voir le prix
+                      Consulter le prix
                     </a>
                   )}
                   <a className="btn btn-ghost btn-sm" href={ficheUrl(f.slug)}>
@@ -127,17 +137,18 @@ export default function BonsPlans() {
             <h3>Comment ce classement est construit</h3>
             <ul className="usp-list">
               <li>
-                Le prix « actuel » est le <strong>minimum</strong> de la fourchette relevée à la main
-                sur Amazon le {PRIX_DATE_FR} ; le prix « de lancement » est celui pratiqué par Apple à
-                la sortie du modèle.
+                Chaque ligne part de deux montants relevés à la main sur Amazon le {PRIX_DATE_FR} : le
+                bas de la fourchette affichée, et le prix pratiqué par Apple à la sortie du modèle.
+                Seul l’écart entre les deux est publié — les montants, eux, ne sont pas recopiés :
+                hors API Amazon, un prix affiché est un prix périmé.
               </li>
               <li>
-                Une référence n'apparaît ici que si les deux montants sont connus : pas de « −70 % »
-                invérifiable, et aucune fiche sans prix de lancement renseigné n'est inventée.
+                Une référence n'apparaît ici que si les deux montants de départ sont connus : pas de
+                « −70 % » invérifiable, et aucun écart calculé sur un prix de lancement inventé.
               </li>
               <li>
-                Les liens « Voir le prix » sont des liens affiliés : ils ouvrent la fiche Amazon du
-                produit concerné, pas une page d'accueil de marque.
+                Les liens « Consulter le prix » sont des liens affiliés : ils ouvrent la fiche Amazon du
+                produit concerné, pas une page d'accueil de marque, pas une recherche.
               </li>
               <li>
                 Les prix bougent chaque semaine. Si le bandeau ci-dessus passe en alerte, ce relevé
