@@ -87,7 +87,7 @@ export default function BoutiqueClient({ categories, products }) {
                     </div>
                     <a
                       className="btn btn-amber btn-block"
-                      href={productLink(p.asin)}
+                      href={productLink(p)}
                       target="_blank"
                       rel="sponsored nofollow noopener"
                     >

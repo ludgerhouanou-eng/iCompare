@@ -62,11 +62,63 @@ public/
   og-comparatif.jpg   → image Open Graph
 ```
 
-## Avant de gagner des commissions (à faire)
+## Affiliation Amazon (état de la configuration)
 
-1. **Tag Amazon** → `lib/site.js` : `SITE.amazonTag = "votretag-21"` (votre tag exact).
-2. **Domaine** → `lib/site.js` : `SITE.url = "https://votredomaine.fr"`
-   (cette URL alimente les canonical, le sitemap et le JSON-LD).
+Le **tag d'associé est intégré** : il est extrait du lien court
+`https://amzn.to/4wXCOF4`, qui redirige vers
+`amazon.com/…/dp/B0FSFLTSFS?…&tag=icompare0d-20`. Comme tous les liens du
+site sont fabriqués par `amazonLink()` dans `lib/site.js`, ce tag est posé
+automatiquement sur **chaque fiche produit** : 25 liens sortants sur
+`/`, `/comparatif` et `/boutique` (16 ASIN distincts), plus les URL des
+données structurées JSON-LD. Aucun lien ne part « nu » vers Amazon.
+
+Un `next build` **avertit dans les journaux** si la configuration ne peut
+pas créditer de commission (tag placeholder, ou suffixe de marché qui ne
+correspond pas au domaine lié). Rien n'est affiché au visiteur.
+
+### ⚠️ Le seul point qui bloque encore les commissions
+
+Le suffixe d'un identifiant Amazon désigne le **programme national** qui
+encaisse : `-20` = amazon.com, `-84` = amazon.fr. Le site est en euros et
+relie **amazon.fr**, mais le tag relevé est **`icompare0d-20`** (marché US).
+Dans cet état, Amazon ne crédite rien. Deux issues, au choix :
+
+- **Programme France (recommandé, cohérent avec les prix affichés)** :
+  créez un identifiant de suivi dans votre compte Associates FR, puis
+  `AMAZON_TAG=votretag-84` en variable d'environnement — ou
+  `amazonTag` dans `lib/site.js`.
+- **Programme États-Unis** : `AMAZON_DOMAIN=amazon.com`. Il faudra alors
+  relire les prix : ils passent en dollars et en disponibilité US.
+
+Les variables `AMAZON_TAG`, `AMAZON_DOMAIN` et `SITE_URL` évitent de
+repousser du code pour changer de marché.
+
+### Épingler un lien précis sur un article
+
+Si vous préférez votre propre URL (lien SiteStripe, promotion, boutique
+d'un vendeur) à l'URL construite depuis l'ASIN, ajoutez un champ `link` à
+l'objet produit dans `lib/catalog.js` ou `lib/products.js` :
+
+```js
+{
+  id: "watch-se3",
+  asin: "B0FQG55GFH",
+  link: "https://amzn.to/4wXCOF4", // prioritaire sur l'ASIN, tag ajouté si absent
+}
+```
+
+`productLink()` renvoie alors cette URL telle quelle (et y ajoute le tag si
+elle en est dépourvue). À réserver aux liens qui **montrent le produit annoncé
+sur la fiche** : un lien qui mène ailleurs que le produit décrit viole le
+contrat Associates et coûte des conversions.
+
+## Avant de mettre en ligne (à faire)
+
+1. **Domaine** → `lib/site.js` : `SITE.url = "https://votredomaine.fr"`
+   (alimente les canonical, le sitemap, l'Open Graph et le JSON-LD).
+   Le nom de domaine doit être **déclaré et approuvé** dans votre compte
+   Associates, sinon les liens sont refusés. Un placeholder présent dans la
+   page vaut aussi un canonical erroné pour Google.
 3. **Vraies images produits** (une fois votre compte Amazon créé) :
    Amazon Associates → **Link Builder** → cocher « Include product » + « Product Image »
    (seule utilisation légale des images Amazon, ToS §5.3), puis remplir le champ

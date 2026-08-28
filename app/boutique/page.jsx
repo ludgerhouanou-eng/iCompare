@@ -68,7 +68,7 @@ const jsonLd = {
             price: p.priceValue,
             priceCurrency: "EUR",
             availability: "https://schema.org/InStock",
-            url: productLink(p.asin),
+            url: productLink(p),
           },
         },
       })),

@@ -1,5 +1,15 @@
 import "./globals.css";
-import { SITE } from "../lib/site.js";
+import { SITE, affiliateIssues } from "../lib/site.js";
+
+// Rien n'est affiché au lecteur : ce rappel apparaît uniquement dans les
+// journaux du build, pour signaler une configuration qui ferait perdre
+// 100 % des commissions avant la mise en ligne.
+const CONFIG_ALERT = affiliateIssues();
+if (CONFIG_ALERT.length) {
+  console.warn("\n[iCompare] Configuration affiliation à corriger :");
+  for (const issue of CONFIG_ALERT) console.warn("  ! " + issue);
+  console.warn("");
+}
 
 export const metadata = {
   metadataBase: new URL(SITE.url),
