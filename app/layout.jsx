@@ -61,6 +61,7 @@ export default function RootLayout({ children }) {
             <nav className="nav" aria-label="Navigation principale">
               <a href="/comparatif">Comparatif 16 / 17 / 18</a>
               <a href="/boutique">Boutique Apple</a>
+              <a href="/bons-plans">Bons plans</a>
               <a href="/comparatif#prix">Prix &amp; promos</a>
               <a href="/comparatif#iphone-18">iPhone 18 : rumeurs</a>
               <a href="/comparatif#faq">FAQ</a>

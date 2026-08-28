@@ -281,6 +281,9 @@ export default function ComparatifPage() {
                         Lire les rumeurs ↓
                       </a>
                     )}
+                    <a className="link-fiche" href={`/produit/${p.id}`}>
+                      Fiche complète de l'{p.name} →
+                    </a>
                   </article>
                 );
               })}
@@ -296,7 +299,10 @@ export default function ComparatifPage() {
             <p className="section-sub">
               Le gros du tableau en une seule vue. Le ★ marque la meilleure valeur de la ligne.
             </p>
-            <SpecTable groups={[{ id: "essentiels", title: "Essentiels", rows: QUICK_ROWS }]} />
+            <SpecTable
+              groups={[{ id: "essentiels", title: "Essentiels", rows: QUICK_ROWS }]}
+              compact
+            />
             <p className="table-legend">
               ★ = meilleure valeur dans la ligne · valeurs en italique = rumeurs non officielles
               (iPhone 18) · prix relevés le {UPDATED} sur Amazon.

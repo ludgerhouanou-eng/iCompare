@@ -767,3 +767,110 @@ td.col-rumor, th.col-rumor { background: #fdf0f8; }
   html { scroll-behavior: auto; }
   .slider-track, .btn, .nav a, .tab-btn, .faq-icon { transition: none; }
 }
+
+/* ============================================================
+   Fiches produit, bons plans et cartes allégées (v1.3)
+   ============================================================ */
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* --- Carte produit (boutique) : glyphe + titre, pas d'illustration 2 Ko --- */
+.art-stage-compact {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0 4px; background: none; min-height: 0;
+}
+.art-stage-compact .glyph { flex: none; }
+.art-meta h3 { margin: 0; font-size: 17px; }
+.art-meta h3 a:hover { color: var(--blue-deep); text-decoration: underline; }
+.art-meta .phone-tag { margin: 2px 0 0; }
+.card-actions { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.link-fiche {
+  align-self: flex-start; font-size: 13.5px; font-weight: 600;
+  color: var(--blue-deep); text-decoration: none;
+}
+.link-fiche:hover { text-decoration: underline; }
+.tab-count {
+  margin-left: 7px; font-size: 11.5px; font-weight: 700;
+  color: var(--text-3); background: #eef2fd; border-radius: 999px; padding: 1px 7px;
+}
+.tab-btn.active .tab-count { background: rgba(255, 255, 255, 0.7); color: var(--blue-deep); }
+
+/* --- Fiche produit --- */
+.fiche-grid { display: grid; grid-template-columns: 300px 1fr; gap: 30px; align-items: start; }
+.fiche-art {
+  display: flex; justify-content: center; align-items: center;
+  background: linear-gradient(160deg, var(--card-2), #fff);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+}
+.fiche-head { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.fiche-head h1 { font-size: clamp(28px, 4vw, 42px); margin: 0; }
+.prix-box { display: flex; flex-direction: column; gap: 4px; }
+.eco {
+  align-self: flex-start; font-size: 12.5px; font-weight: 700;
+  color: #178a4c; background: #e9f8f0; border: 1px solid #bfe8d2;
+  border-radius: 999px; padding: 3px 10px;
+}
+.coloris { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.colori { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--text-2); }
+.swatch {
+  width: 13px; height: 13px; border-radius: 50%; flex: none;
+  border: 1px solid rgba(26, 29, 39, 0.18); box-shadow: 0 1px 2px rgba(30, 40, 90, 0.14);
+}
+.swatch-lg { width: 26px; height: 26px; }
+.fiche-bloc { margin-top: 34px; }
+.fiche-bloc h2 { font-size: 25px; margin-bottom: 12px; }
+.spec-block { margin-top: 18px; }
+.spec-block h3 { font-size: 15.5px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+table.spec-simple { min-width: 0; }
+table.spec-simple th[scope="row"] { min-width: 0; width: 58%; box-shadow: none; position: static; }
+table.spec-simple td { text-align: right; }
+.note-box {
+  margin: 18px 0 0; padding: 13px 16px; font-size: 13.5px; color: #7c4a12;
+  background: #fff7e8; border: 1px solid #f0d9ac; border-radius: 14px;
+}
+.note-ok { color: #155f38; background: #eefaf2; border-color: #c3e7d1; }
+.voisins { margin-top: 38px; }
+.voisins h2 { font-size: 21px; }
+.voisins ul { list-style: none; margin: 12px 0 0; padding: 0; }
+.voisins .voisin a { display: flex; flex-direction: column; gap: 3px; }
+.voisins .voisin:hover { border-color: #b9c6ec; box-shadow: var(--shadow); }
+
+/* --- Bons plans --- */
+.deals { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.deal {
+  display: grid; grid-template-columns: 44px 1fr 210px auto; gap: 18px;
+  align-items: center; padding: 16px 18px;
+}
+.deal-rank {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  font-weight: 800; color: #fff; background: linear-gradient(160deg, var(--pink), var(--pink-deep));
+}
+.deal-body h2 { font-size: 19px; margin: 2px 0 4px; }
+.deal-cat { margin: 0; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+.deal-sub { margin: 0; font-size: 13.5px; color: var(--text-2); }
+.deal .price-note { font-size: 12.5px; color: var(--text-3); margin: 4px 0 0; }
+.deal-price { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.deal-cta { display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 1020px) {
+  .fiche-grid { grid-template-columns: 1fr; }
+  .fiche-art { padding: 16px; }
+  .deal { grid-template-columns: 40px 1fr; }
+  .deal-price, .deal-cta { grid-column: 2; }
+  .deal-cta { flex-direction: row; }
+}
+
+@media (max-width: 680px) {
+  .fiche-grid { gap: 18px; }
+  table.spec-simple th[scope="row"] { width: 52%; }
+  .deal { grid-template-columns: 1fr; }
+  .deal-rank { display: none; }
+  .deal-price, .deal-cta { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deal-rank { animation: none; }
+}

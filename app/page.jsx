@@ -3,12 +3,55 @@ import HeroSlider from "../components/HeroSlider.jsx";
 import FaqItem from "../components/FaqItem.jsx";
 import { PRODUCTS, VERDICTS, FAQS, productLink, UPDATED } from "../lib/products.js";
 import { CATEGORIES, BOUTIQUE_PRODUCTS } from "../lib/catalog.js";
+import { SITE } from "../lib/site.js";
+import { ficheUrl } from "../lib/fiches.js";
+import { PRIX_DATE_ISO } from "../lib/prix.js";
+
+const HOME_DESC =
+  "Comparez iPhone 16, 17 et 18 : fiches techniques, prix Amazon vérifiés, verdicts et conseils d'achat. Trouvez le bon iPhone en 2026 sans vous tromper.";
 
 export const metadata = {
   title: "Comparateur iPhone 2026 : iPhone 16, 17 & 18 comparés",
-  description:
-    "Comparez iPhone 16, 17 et 18 : fiches techniques, prix Amazon vérifiés, verdicts et conseils d'achat. Trouvez le bon iPhone en 2026 sans vous tromper.",
+  description: HOME_DESC,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: SITE.url,
+    siteName: SITE.name,
+    title: "iCompare — Comparateur iPhone 2026",
+    description: HOME_DESC,
+    images: [{ url: "/og-comparatif.jpg", width: 1200, height: 675, alt: "Comparatif iPhone 16, 17 et 18" }],
+    modifiedTime: `${PRIX_DATE_ISO}T09:00:00+02:00`,
+  },
+  twitter: { card: "summary_large_image" },
 };
+
+/* Le site n'avait aucune donnée structurée sur sa page d'entrée : c'est
+   pourtant la page la plus probable d'un résultat de recherche brandé. */
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.name,
+    url: SITE.url,
+    description: HOME_DESC,
+    inLanguage: "fr-FR",
+    publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "iPhone comparés en 2026",
+    numberOfItems: PRODUCTS.length,
+    itemListElement: PRODUCTS.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE.url}${ficheUrl(p.id)}`,
+      name: p.name,
+    })),
+  },
+];
 
 const PHONE_PHOTOS = {
   "iphone-16": "/phones/iphone-16.png",
@@ -61,6 +104,9 @@ function PhoneCard({ p }) {
         ) : (
           <span className="btn btn-disabled btn-block">Précommandes : printemps 2027</span>
         )}
+        <a className="link-fiche" href={`/produit/${p.id}`}>
+          {p.available ? "Fiche complète" : "Fiche des rumeurs"} · {p.name} →
+        </a>
       </div>
     </article>
   );
@@ -69,6 +115,10 @@ function PhoneCard({ p }) {
 export default function Home() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="hero">
         <div className="container">
           <p className="kicker">Comparateur iPhone · Prix vérifiés le {UPDATED}</p>
@@ -224,6 +274,9 @@ export default function Home() {
           </p>
           <a className="btn btn-amber" href="/comparatif">
             Ouvrir le comparatif iPhone 16 / 17 / 18 →
+          </a>
+          <a className="btn btn-ghost" href="/bons-plans">
+            Voir les remises du moment →
           </a>
         </div>
       </section>

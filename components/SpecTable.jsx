@@ -1,7 +1,7 @@
-import PhoneSVG from "./PhoneSVG.jsx";
 import { PRODUCTS, QUICK_ROWS, SPEC_GROUPS, UPDATED } from "../lib/products.js";
+import { ficheUrl } from "../lib/fiches.js";
 
-export default function SpecTable({ groups }) {
+export default function SpecTable({ groups, compact = false }) {
   return (
     <div
       className="spec-table-wrap"
@@ -16,14 +16,12 @@ export default function SpecTable({ groups }) {
             {PRODUCTS.map((p) => (
               <th key={p.id} scope="col" className={p.rumored ? "col-rumor" : ""}>
                 <div className="spec-head">
-                  <PhoneSVG
-                    id={`head-${p.id}`}
-                    color={p.color}
-                    colorDark={p.colorDark}
-                    height={84}
-                    label={p.name}
-                  />
-                  <span className="spec-head-name">{p.name}</span>
+                  {!compact && (
+                    <span className="swatch swatch-lg" style={{ background: p.color }} aria-hidden="true" />
+                  )}
+                  <span className="spec-head-name">
+                    <a href={ficheUrl(p.id)}>{p.name}</a>
+                  </span>
                   {p.rumored && <span className="badge badge-purple badge-xs">Rumeurs</span>}
                   <span className="spec-head-price">{p.priceNow}</span>
                 </div>

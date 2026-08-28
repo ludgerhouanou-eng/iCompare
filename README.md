@@ -153,6 +153,67 @@ personne/structure éligible.
    `image` de chaque produit dans `lib/catalog.js`. En attendant, des illustrations
    SVG locales sont affichées (zéro risque ToS).
 
+## Fiches produit et bons plans (depuis v1.3)
+
+Une URL par article : `/produit/[slug]` est générée pour les **17 références**
+(3 iPhone du comparatif + 15 de la boutique, `iphone-16` fusionné car présent
+dans les deux catalogues). Chaque fiche porte son propre `<title>`, sa
+`description`, son `rel=canonical`, son fil d'Ariane, un `Product` + `Offer`
+JSON-LD et **son lien affilié taggé**. `/comparatif` et `/boutique` ne sont
+plus des impasses : chaque carte renvoie vers la fiche.
+
+`/bons-plans` n'affiche que les remises **démontrables** : minimum de la
+fourchette relevée contre prix de lancement cité dans les données. Faute de
+l'un des deux, aucune badge — donc aucun « −70 % » inventé. Le pourcentage est
+calculé par `lib/prix.js`, jamais recopié à la main.
+
+### Ajouter un produit (un seul objet à écrire)
+
+```js
+// lib/catalog.js → BOUTIQUE_PRODUCTS
+{
+  id: "magic-keyboard-ipad",       // devient le slug /produit/<id>
+  name: "Magic Keyboard for iPad",
+  sub: "Alcantera · Noir",
+  category: "ipad",
+  kind: "accessoire",              // phone|watch|ipad|buds|over|charger|cable
+  badge: "Officiel Apple", badgeTone: "gray",
+  tagline: "…",
+  price: "≈ 279 – 299 €",          // fourchette → le MINIMUM est retenu
+  priceNote: "Prix constaté Amazon, 27/08/2026 (349 € au lancement)",
+  asin: "B0XXXXXXXX",              // null = aucune fiche d'achat, bouton masqué
+}
+```
+
+La fiche `/produit/magic-keyboard-ipad`, l'entrée de `/bons-plans` (si une
+remise est chiffrable), le sitemap et le maillage des cartes se mettent à jour
+tout seuls. `link: "https://amzn.to/…"` en plus d'`asin` force une destination
+personnalisée.
+
+### Fraîcheur des prix
+
+`lib/prix.js` expose `PRIX_DATE_ISO` (date du relevé manuel). Passé
+`PRIX_VETUSTE_MAX_JOURS` (45 jours), les pages affichent un bandeau
+« à revérifier » au lieu de faire semblant d'être un prix. Au-delà, un
+comparateur qui ment sur un montant perd plus de clics qu'il n'en gagne :
+changez la date quand vous revoyez les chiffres, et le site redevient honnête.
+
+### Poids des pages
+
+Le markup vectoriel (`PhoneSVG`, 1 à 2 Ko chacun) n'est plus gardé que sur la
+fiche dédiée ; les cartes de la boutique utilisent un glyphe de ~300 octets.
+Mesuré sur le build statique, `comparatif.html` passe de **185,1 Ko à 158 Ko**
+(brut) et la grille boutique perd 16 Ko de SVG. En gzip — ce qui traverse
+vraiment le réseau — la page boutique est à parité (14,1 contre 14,5 Ko) tout
+en restant lisible sans JavaScript.
+
+### À corriger dans les données (repéré par le contrôle croisé)
+
+- `iphone-17e` : `priceValue: "719"` (l'ancien prix de lancement) alors que
+  `price` annonce « ≈ 650 – 720 € ». Le JSON-LD lit désormais le minimum de la
+  fourchette — mais remplacez la valeur pour que les deux concordent.
+- `watch-charger-ruxely` : `priceValue: "13"` pour un prix affiché « ≈ 14 € ».
+
 ## SEO inclus
 
 - Meta descriptions + Open Graph + Twitter Card sur les 3 pages

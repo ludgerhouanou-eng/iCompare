@@ -1,4 +1,6 @@
-import BoutiqueClient from "../../components/BoutiqueClient.jsx";
+import CategoryTabs from "../../components/CategoryTabs.jsx";
+import ProductCard from "../../components/ProductCard.jsx";
+import { euroMini } from "../../lib/prix.js";
 import { SITE } from "../../lib/site.js";
 import {
   CATEGORIES,
@@ -65,7 +67,12 @@ const jsonLd = {
           description: p.tagline,
           offers: {
             "@type": "Offer",
-            price: p.priceValue,
+            // Le prix déclaré à Google doit être celui que le lecteur voit.
+            // Deux fiches portaient un priceValue divergent du texte affiché
+            // (iphone-17e : 719 € déclaré pour « ≈ 650 – 720 € » ; chargeur
+            // RUXELY : 13 € pour « ≈ 14 € ») — écart de prix = donnée enrichie
+            // refusée ou pénalisée. On prend le minimum de la fourchette.
+            price: String(euroMini(p.price) ?? p.priceValue),
             priceCurrency: "EUR",
             availability: "https://schema.org/InStock",
             url: productLink(p),
@@ -119,7 +126,35 @@ export default function BoutiquePage() {
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="container">
-          <BoutiqueClient categories={CATEGORIES} products={BOUTIQUE_PRODUCTS} />
+          <CategoryTabs
+            categories={CATEGORIES.map((c) => ({
+              ...c,
+              count: BOUTIQUE_PRODUCTS.filter((p) => p.category === c.id).length,
+            }))}
+            total={BOUTIQUE_PRODUCTS.length}
+          />
+
+          {CATEGORIES.map((c) => (
+            <section
+              key={c.id}
+              id={c.id}
+              className="cat-section"
+              data-cat-section={c.id}
+              aria-label={c.name}
+            >
+              <div className="cat-head">
+                <h2>
+                  <span aria-hidden="true">{c.icon}</span> {c.name}
+                </h2>
+                <p>{c.longBlurb}</p>
+              </div>
+              <div className="grid-3">
+                {BOUTIQUE_PRODUCTS.filter((p) => p.category === c.id).map((p) => (
+                  <ProductCard key={p.id} product={p} urlAffilie={productLink(p)} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
 
@@ -152,10 +187,10 @@ export default function BoutiquePage() {
               <p>Septembre 2026 : iPhone 18 Pro et Fold. Printemps 2027 : iPhone 18 standard. Tout le calendrier.</p>
               <span className="badge badge-purple">À suivre</span>
             </a>
-            <a className="card profile-card" href="/">
-              <h4>🏠 Retour à l'accueil</h4>
-              <p>Le verdict en 30 secondes, la méthode et les questions fréquentes.</p>
-              <span className="badge badge-gray">Accueil</span>
+            <a className="card profile-card" href="/bons-plans">
+              <h4>💸 Les remises du moment</h4>
+              <p>Les références passées sous leur prix Apple, triées par économie réelle en euros.</p>
+              <span className="badge badge-green">Bons plans</span>
             </a>
           </div>
         </div>
