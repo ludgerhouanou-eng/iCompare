@@ -80,7 +80,7 @@ const jsonLd = {
 const TIPS = [
   {
     title: "Pourquoi acheter un « ancien » iPhone ?",
-    text: "L'iPhone 17e et l'iPhone 15 offrent l'essentiel d'un iPhone 17 — iOS 26 et Apple Intelligence compris — pour plusieurs centaines d'euros de moins : l'écart exact, seule la fiche Amazon le sait. L'iPhone 13 « Renewed » est le choix budget étudiant/famille : 90 jours pour changer d'avis + 1 an de garantie via le programme Amazon Renewed.",
+    text: "L'iPhone 17e offre l'essentiel d'un iPhone 17, Apple Intelligence compris. L'iPhone 15 et le 13 « Renewed » offrent l'essentiel d'iOS 26 — sans Apple Intelligence, que la puce A17 Pro rend seule possible. L'écart exact, seule la fiche Amazon le sait. Le 13 Renewed garde 90 jours pour changer d'avis et 1 an de garantie commerciale via le programme Amazon Renewed.",
   },
   {
     title: "Quelle Apple Watch selon votre usage ?",
@@ -237,6 +237,22 @@ export default function BoutiquePage() {
               </div>
             </section>
           ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="guide-rappel">
+            <p>
+              Une question de compatibilité, de garantie ou de chargeur avant de commander ? Les
+              guides du site répondent point par point, sources à l'appui :{" "}
+              <a href="/guides/ios-26-quels-iphone-compatibles">compatibilité iOS 26</a>,{" "}
+              <a href="/guides/apple-intelligence-verifier-iphone">Apple Intelligence</a>,{" "}
+              <a href="/guides/verifier-garantie-iphone-numero-de-serie">vérifier la garantie</a>
+              ,{" "}
+              <a href="/guides/iphone-renewed-ce-que-ca-couvre">ce que couvre un Renewed</a>.
+            </p>
+          </div>
         </div>
       </section>
 

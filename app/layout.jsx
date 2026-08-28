@@ -33,7 +33,7 @@ export const metadata = {
     url: SITE.url,
     siteName: SITE.name,
     title: "iCompare — Comparateur iPhone 2026",
-    description: "iPhone 16, 17 ou 18 ? Fiches techniques, prix Amazon et verdicts clairs.",
+    description: "iPhone 16, 17 ou 18 ? Fiches techniques comparées, écarts datés et verdicts clairs.",
     images: [
       { url: "/og-comparatif.jpg", width: 1200, height: 675, alt: "Comparatif iPhone 16, 17 et 18" },
     ],
@@ -62,7 +62,8 @@ export default function RootLayout({ children }) {
               <a href="/comparatif">Comparatif 16 / 17 / 18</a>
               <a href="/boutique">Boutique Apple</a>
               <a href="/bons-plans">Bons plans</a>
-              <a href="/comparatif#prix">Prix &amp; promos</a>
+              <a href="/guides">Guides vérif</a>
+              <a href="/comparatif#prix">Où acheter</a>
               <a href="/comparatif#iphone-18">iPhone 18 : rumeurs</a>
               <a href="/comparatif#faq">FAQ</a>
             </nav>
@@ -81,8 +82,8 @@ export default function RootLayout({ children }) {
                 </a>
                 <p>
                   Le comparateur iPhone qui va droit au but : fiches techniques comparées,
-                  écarts au prix Apple relevés à date et verdicts sans blabla. Les montants,
-                  seul Amazon les affiche.
+                  écarts au prix Apple relevés à date, guides de vérification et verdicts sans
+                  blabla. Les montants, seul Amazon les affiche.
                 </p>
               </div>
               <div>
@@ -91,7 +92,8 @@ export default function RootLayout({ children }) {
                   <li><a href="/">Accueil</a></li>
                   <li><a href="/comparatif">Comparatif iPhone 16 / 17 / 18</a></li>
                   <li><a href="/boutique">Boutique Apple (Watch, iPad, AirPods…)</a></li>
-                  <li><a href="/comparatif#prix">Prix &amp; où acheter</a></li>
+                  <li><a href="/comparatif#prix">Où acheter, et à quel prix vérifié</a></li>
+                  <li><a href="/guides">Guides : compatibilité, garantie, eSIM</a></li>
                   <li><a href="/comparatif#faq">Questions fréquentes</a></li>
                 </ul>
               </div>
@@ -99,8 +101,9 @@ export default function RootLayout({ children }) {
                 <h5>Mentions &amp; transparence</h5>
                 <p>
                   En tant que Partenaire Amazon, nous réalisons un bénéfice sur les achats
-                  remplissant les conditions requises. Les prix affichés sont indicatifs et
-                  sujets à modification.
+                  remplissant les conditions requises. Nous n'affichons pas de prix : le
+                  montant et la disponibilité d'un produit sont ceux de sa fiche Amazon, au
+                  moment du clic.
                 </p>
                 <p>
                   Apple, iPhone, iOS, Apple Intelligence, MagSafe sont des marques déposées

@@ -1,6 +1,7 @@
 import { SITE } from "../lib/site.js";
 import { FICHES, ficheUrl } from "../lib/fiches.js";
 import { PRIX_DATE_ISO } from "../lib/prix.js";
+import { GUIDES } from "../lib/guides.js";
 
 /**
  * Une URL par contenu monétisable : les fiches produit sont ce que les
@@ -23,6 +24,22 @@ export default function sitemap() {
     { url: `${SITE.url}/comparatif`, lastModified: now, changeFrequency: "daily", priority: 1.0 },
     { url: `${SITE.url}/boutique`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE.url}/bons-plans`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    // Les guides portent le trafic longue traîne : ils attirent le lecteur qui
+    // n'a pas encore choisi son modèle. Leur lastmod est la date de relevé de la
+    // table de compatibilité, pas la date du build — un lastmod qui bouge sans
+    // changement de contenu est du bruit pour Google.
+    {
+      url: `${SITE.url}/guides`,
+      lastModified: new Date("2026-08-28"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    ...GUIDES.map((g) => ({
+      url: `${SITE.url}/guides/${g.slug}`,
+      lastModified: new Date("2026-08-28"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    })),
     ...fiches,
   ];
 }

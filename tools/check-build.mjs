@@ -15,6 +15,8 @@ import { join, relative } from "node:path";
 import { euroMini, AFFICHER_MONTANTS } from "../lib/prix.js";
 import { APPLE_STORE, storeSpaceUrl } from "../lib/site.js";
 import { CATEGORIES } from "../lib/catalog.js";
+import { GUIDES } from "../lib/guides.js";
+import { IPHONE, IPAD } from "../lib/modeles.js";
 
 const APP = join(".next", "server", "app");
 const TAILLE_MAX_KO = 220; // HTML d'une page, en Ko — au-delà, on a déraillé
@@ -250,6 +252,50 @@ for (const f of htmls) {
     }
   }
 
+  // 8 bis. Guides : une page = une question, un seul lien monétisé, des sources
+  if (rel.startsWith(join("guides", ""))) {
+    const visibleG = h
+      .replace(/<script[\s\S]*?<\/script>/g, "")
+      .replace(/<style[\s\S]*?<\/style>/g, "");
+    const estIndex = /guides[\\/]?index\.html$/.test(rel) || rel === join("guides.html");
+    if (!estIndex) {
+      const amazon = (
+        visibleG
+          .replace(/&amp;/g, "&")
+          .match(/<a[^>]*href="https:\/\/www\.amazon\.[a-z.]+\/[^"]*"[^>]*>/g) || []
+      );
+      if (amazon.length !== 1) {
+        ajouter(f, `${amazon.length} lien(s) Amazon visible(s) : un guide en admet un seul, l'espace d'achat`);
+      }
+      for (const a of amazon) {
+        if (!/[?&]tag=/.test(a)) ajouter(f, "le lien Amazon du guide n'est pas taggé");
+        if (!/rel="sponsored nofollow noopener"/.test(a)) ajouter(f, "le lien Amazon du guide n'a pas rel=\"sponsored\"");
+        if (!/\/stores\/page\//.test(a)) ajouter(f, "le CTA d'un guide doit mener à un espace d'achat vérifié, pas à une fiche");
+      }
+      // Le maillage utile, ce n'est pas la navigation ni le pied de page (ils
+      // sont sur toutes les pages) : c'est le bloc « À lire aussi », qui doit
+      // tenir 3 entrées dont au moins une vers une page où l'on peut acheter.
+      const voir = (visibleG.match(/<nav class="guide-voir-aussi"[\s\S]*?<\/nav>/) || [""])[0];
+      const entrees = new Set((voir.match(/href="\/[^"]*"/g) || []));
+      if (entrees.size < 3) {
+        ajouter(f, `bloc « À lire aussi » à ${entrees.size} lien(s) interne(s) : un guide sans sortie ne convertit pas`);
+      }
+      if (!/href="\/(boutique|comparatif|produit\/)/.test(voir)) {
+        ajouter(f, "aucun lien d'un guide vers une page d'achat (\u00ab \u00e0 lire aussi \u00bb) : le guide capte le lecteur pour Google, pas pour vous");
+      }
+      if (!/Sources et m\u00e9thode/.test(visibleG)) {
+        ajouter(f, "pas de bloc « Sources et méthode » : une affirmation non sourcée n'a pas sa place ici");
+      }
+      if (!/relev\u00e9 du \d|Relev\u00e9 \u00e9|le \d\d?\s?ao\u00fbt \d{4}/.test(visibleG)) {
+        ajouter(f, "aucune date de relevé visible : une liste de compatibilité sans date est une affirmation");
+      }
+      // Un guide doit citer au moins une source externe, et toute sortie non
+      // Amazon doit porter nofollow (sinon on distribue du PageRank à l'aveugle).
+      const citations = (visibleG.match(/<a[^>]*href="https:\/\/[^"]*"[^>]*rel="nofollow noopener"/g) || []).length;
+      if (citations < 2) ajouter(f, `${citations} citation(s) externe(s) avec rel adéquat (2 minimum)`);
+    }
+  }
+
   // 9. Garde-fou de poids
   const ko = Buffer.byteLength(h) / 1024;
   if (ko > TAILLE_MAX_KO) ajouter(f, `HTML de ${ko.toFixed(1)} Ko > ${TAILLE_MAX_KO} Ko (page à découper)`);
@@ -287,6 +333,85 @@ for (const c of CATEGORIES) {
   if (/\.png$/i.test(c.visuel)) {
     problemes.push(`${c.visuel} en PNG : compresser en JPG/WebP pour une photo`);
   }
+}
+
+// 11 bis. Garde-fou factuel des guides.
+// (a) Les valeurs qui nous ont déjà fait défaut sont épinglées ici : si
+//     quelqu'un (moi, un refactor, un copier-coller) les fait bouger, le build
+//     échoue. Sources : Wikipedia « iOS 26 », itechguides et rottenwifi,
+//     consultés le 28 août 2026.
+const ATTENDUES = [
+  ["iPhone 15 / 15 Plus", { ios26: true, ia: false }],
+  ["iPhone 15 Pro / Pro Max", { ios26: true, ia: true }],
+  ["iPhone 13 / 13 mini", { ios26: true, ia: false }],
+  ["iPhone 14 Pro / Pro Max", { ios26: true, ia: false }],
+  ["iPhone 17 / 17e", { ios26: true, ia: true }],
+  ["iPhone XR", { ios26: false }],
+  ["iPad (A16), 11\u1d49 g\u00e9n\u00e9ration", { ios26: true, ia: false }],
+  ["iPad mini (A17 Pro)", { ios26: true, ia: true }],
+];
+for (const [modele, attendu] of ATTENDUES) {
+  const ligne = [...IPHONE, ...IPAD].find((m) => m.modele === modele);
+  if (!ligne) {
+    problemes.push(`table de compatibilit\u00e9 : « ${modele} » a disparu de lib/modeles.js`);
+    continue;
+  }
+  for (const [champ, valeur] of Object.entries(attendu)) {
+    if (ligne[champ] !== valeur) {
+      problemes.push(
+        `lib/modeles.js : ${modele} a ${champ}=${ligne[champ]}, la source du 28/08/2026 dit ${valeur}`
+      );
+    }
+  }
+}
+
+// (b) Aucun page ne doit pr\u00eater Apple Intelligence \u00e0 un mod\u00e8le exclu par le
+//     mat\u00e9riel. D\u00e9tection par phrase : la phrase qui mentionne « Apple
+//     Intelligence » et un mod\u00e8le non \u00e9ligible, sans marqueur de n\u00e9gation, est
+//     une erreur factuelle \u2014 c'est exactement celle que ce d\u00e9p\u00f4t a port\u00e9e un temps.
+const NON_IA = ["iPhone 11", "iPhone 12", "iPhone 13", "iPhone 14", "iPhone 15", "iPhone SE (2", "iPhone SE (3", "iPad (A16)"];
+const NEGATIONS = ["pas", "non", "sans", "sauf", "exclu", "manque", "absence", "n'", "ni ", "jamais", "hors de", "\u00e9cart", "plancher", "r\u00e9serve"];
+const sansCasse = (s) => s.toLowerCase();
+const texteVu = htmls
+  .map((f) => {
+    const v = readFileSync(f, "utf8")
+      .replace(/<script[\s\S]*?<\/script>/g, "")
+      .replace(/<style[\s\S]*?<\/style>/g, "")
+      // Les tableaux de compatibilité sont CONSTRUITS depuis lib/modeles.js et
+      // leurs valeurs sont épinglées en (a) : ils ne peuvent pas contenir une
+      // affirmation fausse sans la rendre ailleurs. On les sort de l'analyse
+      // syntaxique, qui les lirait comme une phrase sans point final.
+      .replace(/<table[\s\S]*?<\/table>/g, " ")
+      .replace(/<[^>]+>/g, " ");
+    return [f.replace(APP + "/", "") || "index", v];
+  });
+for (const [nom, v] of texteVu) {
+  for (let phrase of v.split(/(?<=[.!?])\s+/)) {
+    phrase = phrase.replace(/\s+/g, " ");
+    if (!/Apple Intelligence/.test(phrase)) continue;
+    if (phrase.trim().endsWith("?")) continue; // une question n'affirme rien
+    // Un mod\u00e8le \u00e9ligible cit\u00e9 dans la m\u00eame phrase annule le signal (« iPhone 15 Pro »).
+    const sansEligibles = phrase
+      .replace(/iPhone 15 Pro \w*/g, "")
+      .replace(/iPhone 1[67][^,.;]*/g, "")
+      .replace(/iPhone Air/g, "")
+      .replace(/iPad mini \(A17 Pro\)/g, "")
+      .replace(/iPad (Air|Pro)[^,.;]*/g, "");
+    if (NON_IA.some((m) => sansEligibles.includes(m)) && !NEGATIONS.some((n) => sansCasse(phrase).includes(n))) {
+      problemes.push(`${nom} : phrase qui pr\u00eate Apple Intelligence \u00e0 un mat\u00e9riel exclu \u2014 \u00ab ${phrase.trim().slice(0, 120)}\u2026 \u00bb`);
+    }
+  }
+}
+
+// (c) Le nombre de guides rendus doit \u00eatre celui de la donn\u00e9e : une page qui
+//     n'a pas \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9e est une page qui ne sera jamais trouv\u00e9e.
+const pagesGuides = htmls.filter((f) => /[\\/]guides[\\/][^\\/]+\.html$/.test(f));
+if (pagesGuides.length !== GUIDES.length) {
+  problemes.push(`${pagesGuides.length} pages de guide rendues pour ${GUIDES.length} dans lib/guides.js`);
+}
+const slugsVus = new Set(pagesGuides.map((f) => f.split(/[\\/]/).pop().replace(/\.html$/, "")));
+for (const g of GUIDES) {
+  if (!slugsVus.has(g.slug)) problemes.push(`guide ${g.slug} absent de la sortie : introuvable pour Google comme pour un lecteur`);
 }
 
 const doublonsTitres = [...vus].filter(([, n]) => n > 1).map(([t, n]) => `${n}× « ${t} »`);

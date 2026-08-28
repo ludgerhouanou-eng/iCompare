@@ -83,6 +83,8 @@ app/
   comparatif/page.jsx → Page SEO principale : 35 specs, écarts datés, rumeurs, FAQ
   boutique/page.jsx   → 5 rayons cliquables (espace d'achat Amazon) + 15 produits
                         avec un visuel par produit
+  guides/page.jsx     → index des guides de vérification (trafic longue traîne)
+  guides/[slug]/      → 8 guides prérendus, une question par URL, 404 sinon
   globals.css         → design system (blanc + teintes bleu/rose)
   sitemap.js          → 21 URL (utilise SITE.url)
   robots.js           → robots.txt + lien vers le sitemap
@@ -94,9 +96,11 @@ components/
   SpecBars.jsx        → barres visuelles écran/puce/batterie
   FaqItem.jsx, Disclosure.jsx, BuyBar.jsx, BoutiqueClient.jsx
 lib/
-  site.js             → ⚙️ DOMAINE + TAG AMAZON (à renseigner !)
+  site.js             → ⚙️ DOMAINE + TAG AMAZON (à renseigner !) + espaces du store Apple
   products.js         → iPhone 16/17/18 : specs, verdicts, FAQ, barres
   catalog.js          → 15 produits boutique (champ "image" à renseigner)
+  guides.js           → 8 guides : questions, réponses, FAQ, sources, maillage
+  modeles.js          → table de compatibilité (iOS 26 / Apple Intelligence), source unique
 public/
   produits/           → 5 illustrations de rayon (JPG 14-27 Ko, dessinées pour le site)
   phones/             → rendus iPhone (gamme, face à face, 16, 17, 18)
@@ -363,6 +367,44 @@ affiche alors la photo à la place du vectoriel, avec un `alt` construit sur le
 nom et le sous-titre du produit ; les dimensions sont exigées par le contrôle
 de build, pour qu'aucune carte ne fasse danser la page au chargement.
 
+### /guides : les pages qui amènent le trafic
+
+Huit pages de vérification (`/guides/ios-26-quels-iphone-compatibles`,
+`/guides/apple-intelligence-verifier-iphone`,
+`/guides/verifier-garantie-iphone-numero-de-serie`, `/guides/esim-iphone-compatibilite`,
+`/guides/iphone-verrouille-operateur-comment-verifier`, `/guides/quel-chargeur-pour-iphone`,
+`/guides/iphone-renewed-ce-que-ca-couvre`, `/guides/ios-26-sur-iphone-13-14-15`).
+Choix de ciblage assumé : les requêtes « iPhone 17 prix » réclament un montant
+affiché (interdit sans PA API) et sont trustées par des sites de dix ans ; les
+requêtes « mon iPhone est-il compatible », « ma garantie court-elle encore »,
+« ce chargeur sert-il à quelque chose » sont à la portée d'un domaine neuf, et
+leur lecteur a besoin du lien vers la fiche — le clic affilié y est un service
+rendu, pas un piège.
+
+Trois règles rédactionnelles, toutes contrôlées au build :
+
+- **aucune spécification recopiée à la main** : les tableaux de compatibilité
+  sont construits à l'affichage depuis `lib/modeles.js` (une ligne par modèle,
+  une source par colonne). Huit valeurs sont épinglées dans `npm run check`
+  avec leur source et leur date — les retourner fait échouer le build ;
+- **une source datée par affirmation externe**, listée en bas de page, et un
+  encart « à confirmer » explicite quand on ne peut pas trancher (dates
+  d'abandon logiciel, grilles de désimlockage, langues prises en charge :
+  nous ne les publions pas, elles bougent) ;
+- **un seul lien monétisé par guide** — l'espace d'achat du rayon concerné,
+  taggé et `rel="sponsored"` — plus des citations en `rel="nofollow"`. Et au
+  moins un lien du bloc « À lire aussi » vers une page où l'on peut acheter :
+  un guide qui ne mène nulle part fait grossir Google, pas vous.
+
+Au passage, trois affirmations du catalogue ont été corrigées, parce qu'un
+guide sur le sujet les aurait contredites : ni l'iPhone 15 ni l'iPhone 13 ne
+portent Apple Intelligence (la fonction exige une puce A17 Pro et 8 Go), et
+l'iPad (A16) de 2025 non plus (sur tablette, le plancher est M1, à l'exception
+du mini A17 Pro). `npm run check` refuse désormais, sur toute page du site,
+une phrase qui prêterait Apple Intelligence à un matériel exclu — les phrases
+interrogatives et les formulations négatives sont laissées tranquilles, sinon
+le garde-fou hurlerait sur sa propre liste d'exclusions.
+
 ### Poids des pages
 
 Mesuré sur le build statique actuel (`gzip -9` sur `.next/server/app/*.html`,
@@ -370,12 +412,13 @@ donc ce qui traverse vraiment le réseau) :
 
 | Page | HTML brut | gzip |
 | --- | --- | --- |
-| `/` | 46,9 Ko | 9,2 Ko |
-| `/comparatif` | 158,3 Ko | 25,8 Ko |
-| `/boutique` | 157,8 Ko | 21,5 Ko |
-| `/bons-plans` | 46,7 Ko | 7,5 Ko |
-| les 17 fiches produit | 33,9 Ko en moyenne | 6,8 Ko |
-| **les 21 pages** | **985 Ko** | **179,4 Ko** |
+| `/` | 47,4 Ko | 9,3 Ko |
+| `/comparatif` | 158,8 Ko | 25,9 Ko |
+| `/boutique` | 160,4 Ko | 22,3 Ko |
+| `/bons-plans` | 47,2 Ko | 7,6 Ko |
+| les 8 guides (moyenne) | 47,7 Ko | 9,4 Ko |
+| les 17 fiches produit (moyenne) | 34,4 Ko | 6,9 Ko |
+| **les 30 pages** | **1 414 Ko** | **264,6 Ko** |
 
 Le visuel est réapparu sur les 15 cartes de la boutique à dessein — demande de
 l'éditeur : une image par produit. Coût mesuré en A/B (même build, carte au
