@@ -125,7 +125,7 @@ const PROFILES = [
     title: "Budget serré / étudiant",
     pick: "iPhone 16",
     tone: "green",
-    text: "C'est le plus abordable du trio : A18, 48 MP, et encore 3 à 4 ans de mises à jour devant lui.",
+    text: "C'est, des trois, celui dont l'écart relevé sous le prix Apple est le plus large : A18, 48 MP, et encore 3 à 4 ans de mises à jour devant lui.",
   },
   {
     title: "Le choix sans regret",
@@ -195,7 +195,7 @@ export default function ComparatifPage() {
           <p className="lead">
             <strong>Réponse rapide :</strong> l'<a href="#verdict">iPhone 17</a> est le meilleur
             choix global en 2026 (écran 120 Hz, double 48 MP, 30 h d'autonomie) ; l'
-            <a href="#verdict">iPhone 16</a> reste le plus abordable des trois ;
+            <a href="#verdict">iPhone 16</a> est celui dont l'écart relevé sous le prix Apple est le plus large des trois ;
             l'iPhone 18 standard, attendu au <a href="#iphone-18">printemps 2027</a> avec sa
             puce A20 gravée en 2 nm, n'a pas de raison de vous faire attendre.
           </p>
@@ -206,7 +206,7 @@ export default function ComparatifPage() {
             <a href="#rapide">2. Comparatif rapide</a>
             <a href="#fiches">3. Fiches techniques</a>
             <a href="#analyse">4. Analyse détaillée</a>
-            <a href="#prix">5. Prix &amp; où acheter</a>
+            <a href="#acheter">5. Où acheter, et à quel moment</a>
             <a href="#iphone-18">6. iPhone 18 : rumeurs</a>
             <a href="#profils">7. Quel iPhone choisir ?</a>
             <a href="#faq">8. FAQ</a>
@@ -368,15 +368,15 @@ export default function ComparatifPage() {
           </div>
         </section>
 
-        {/* ---------- 5. PRIX ---------- */}
-        <section className="section" id="prix">
+        {/* ---------- 5. OÙ ACHETER (aucun prix affiché, volontairement) ---------- */}
+        <section className="section" id="acheter">
           <div className="container">
             <p className="kicker">5 · Où acheter</p>
-            <h2 className="section-title">Prix &amp; où acheter au bon moment</h2>
+            <h2 className="section-title">Où acheter, et à quel moment</h2>
             <p className="section-sub">
-              Prix relevés le {UPDATED}. Les iPhone fluctuent régulièrement sur Amazon — les plus
-              belles baisses arrivent souvent autour des grands événements de vente (Prime Day,
-              Black Friday).
+              Écarts relevés le {UPDATED} — pas des prix : nous n'en affichons aucun. Les iPhone
+              fluctuent régulièrement sur Amazon, et les plus fortes baisses se voient souvent
+              autour des grands événements de vente (Prime Day, Black Friday).
             </p>
             <div className="grid-3">
               {PRODUCTS.map((p) => (

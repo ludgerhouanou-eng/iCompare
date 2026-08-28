@@ -84,7 +84,7 @@ const TIPS = [
   },
   {
     title: "Quelle Apple Watch selon votre usage ?",
-    text: "SE 3 : l'essentiel au meilleur prix (mais sans ECG ni tension). Series 11 : le compromis complet avec ECG, tension artérielle, 2 000 nits et 24 h d'autonomie. Ultra 3 : le modèle pro de l'extérieur — satellite, GPS double fréquence, 42 h d'autonomie — si vous en faites vraiment votre activité principale.",
+    text: "SE 3 : l'essentiel, au bas de la gamme (mais sans ECG ni tension). Series 11 : le compromis complet avec ECG, tension artérielle, 2 000 nits et 24 h d'autonomie. Ultra 3 : le modèle pro de l'extérieur — satellite, GPS double fréquence, 42 h d'autonomie — si vous en faites vraiment votre activité principale.",
   },
   {
     title: "Audio : trois niveaux, zéro hésitation",
@@ -114,12 +114,13 @@ export default function BoutiquePage() {
         <p className="lead">
           Le comparatif <a href="/comparatif">iPhone 16 / 17 / 18</a> n'est pas tout :
           voici aussi notre sélection courte sur le reste de l'écosystème — montres,
-          iPhone des générations précédentes (souvent les plus grosses économies),
+          iPhone des générations précédentes (les écarts les plus larges de la gamme),
           iPad, casques et chargeurs. <strong>{BOUTIQUE_PRODUCTS.length} produits</strong>,
           chacun avec sa fiche et son lien Amazon. Nous n'affichons pas les montants
           ici : un prix relevé à la main est périmé en quelques jours, celui
-          d'Amazon est celui du jour. Seule la mention de remise porte notre date
-          ({CATALOG_UPDATED}).
+          d'Amazon est celui du jour. Nos seules dates sont celles de nos relevés :
+          l'écart au prix Apple ({CATALOG_UPDATED}) et la compatibilité des guides
+          (28 août 2026).
         </p>
       </div>
 

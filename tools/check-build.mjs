@@ -13,6 +13,8 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { euroMini, AFFICHER_MONTANTS } from "../lib/prix.js";
+import { PRODUCTS } from "../lib/products.js";
+import { SITE } from "../lib/site.js";
 import { APPLE_STORE, storeSpaceUrl } from "../lib/site.js";
 import { CATEGORIES } from "../lib/catalog.js";
 import { GUIDES } from "../lib/guides.js";
@@ -20,6 +22,16 @@ import { IPHONE, IPAD } from "../lib/modeles.js";
 
 const APP = join(".next", "server", "app");
 const TAILLE_MAX_KO = 220; // HTML d'une page, en Ko — au-delà, on a déraillé
+
+function html_unescape(s) {
+  return String(s)
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&quot;|&#x22;|&#34;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
 
 function echapper(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -412,6 +424,80 @@ if (pagesGuides.length !== GUIDES.length) {
 const slugsVus = new Set(pagesGuides.map((f) => f.split(/[\\/]/).pop().replace(/\.html$/, "")));
 for (const g of GUIDES) {
   if (!slugsVus.has(g.slug)) problemes.push(`guide ${g.slug} absent de la sortie : introuvable pour Google comme pour un lecteur`);
+}
+
+// 11 ter. Ce que le <head> promet, et ce que le règlement interdit.
+// Un jugement éditorial (« meilleur rapport qualité-prix ») n'est pas une donnée
+// de prix et reste autorisé : la liste ne vise que le prix du jour, la promo en
+// cours et la rareté — trois choses que le build ne peut ni vérifier ni retirer.
+// Le contrôle « zéro montant » ne portait que sur le corps visible : or c'est la
+// meta description qui s'affiche dans les résultats de Google. Un montant dans
+// un <meta> est donc vu par le lecteur, exactement comme dans le corps de page.
+const HORS_LIMITES = /(à moindre prix|le moins cher de la|moins cher qu['\u2019]|moins cher que|fois moins cher|le plus abordable|en ce moment|en promo|promo sur amazon|prix les plus bas|les plus bas depuis|meilleur prix|au meilleur prix|plus grosses \u00e9conomies|meilleures \u00e9conomies|code promo|à saisir|stock limit|derni\u00e8res unit)/gi;
+for (const f of htmls) {
+  const rel = relative(APP, f);
+  const h = readFileSync(f, "utf8");
+  const tete = h.slice(0, h.indexOf("</head>") + 7 || h.length);
+  if (!AFFICHER_MONTANTS) {
+    const teteVis = html_unescape(tete);
+    const dansTete = teteVis.match(/\d[\d .\u202f]*[,.]?\d*\s*\u20ac/g) || [];
+    if (dansTete.length) {
+      problemes.push(`${rel} : ${dansTete.length} montant(s) dans le <head> (${dansTete[0]}) — la meta description s'affiche dans les résultats de recherche, elle est tenue aux mêmes règles que le texte de la page`);
+    }
+  }
+  const corps = h
+    .replace(/<script[\s\S]*?<\/script>/g, "")
+    .replace(/<style[\s\S]*?<\/style>/g, "");
+  const texte = html_unescape(corps.replace(/<[^>]+>/g, " "));
+  const abus = texte.match(HORS_LIMITES);
+  if (abus) {
+    problemes.push(
+      `${rel} : ${[...new Set(abus.map((x) => x.toLowerCase()))].join(", ")} — une affirmation de prix, de promo ou de raret\u00e9 que le build ne peut ni v\u00e9rifier ni retirer \u00e0 temps (Politiques du Programme Partenaires, rubrique « Liens présents sur votre site »)`
+    );
+  }
+  // Le titre d'une fiche ne doit plus promettre « prix et avis » : la page ne
+  // montre pas de prix, elle montre un écart daté et le lien qui m\u00e8ne au montant.
+  const titre = (tete.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
+  if (/prix et avis|\u2014 prix\b/i.test(html_unescape(titre))) {
+    problemes.push(`${rel} : le <title> promet un prix que la page n'affiche pas (« ${titre.slice(0, 60)}… »)`);
+  }
+  // Un domaine revendiqu\u00e9 doit \u00eatre le domaine servi : « iCompare.fr » dans la
+  // marque alors que SITE.url est un h\u00f4te mutualis\u00e9 \u00e9tait une promesse fausse.
+  // On teste le texte épongé : la marque est rendue « iCompare<span>.fr</span> »,
+  // donc une recherche sur le HTML brut ne verrait jamais la revendication.
+  const TLD_REVENDIQUÉ = /iCompare\s*[\u00b7.,]?\s*\.?\s*fr\b(?!ançais)/i;
+  if (!/\.fr$/.test(new URL(SITE.url).hostname) && TLD_REVENDIQUÉ.test(texte.replace(/<[^>]+>/g, " "))) {
+    problemes.push(`${rel} : la marque affiche « iCompare.fr » alors que le site est servi sur ${new URL(SITE.url).hostname} — revendiquer un suffixe qu'on ne poss\u00e8de pas`);
+  }
+  // Deux fois le même chiffre dans la même carte : c'était le cas du bloc
+  // « À comparer avant d'acheter » (−27 % au badge + −27 % dans la phrase).
+  for (const a of corps.match(/<a[\s\S]{0,600}?<\/a>/g) || []) {
+    const pct = a.match(/\u2212\s?\d+\s?%/g) || [];
+    if (pct.length >= 2 && new Set(pct).size === 1) {
+      problemes.push(`${rel} : le m\u00eame pourcentage est \u00e9crit deux fois dans le m\u00eame lien (${pct[0]})`);
+    }
+  }
+}
+
+// 11 quater. Le superlatif du comparatif doit \u00eatre soutenu par les donn\u00e9es :
+// la carte porteur du badge « plus forte baisse » doit \u00eatre celle de l'\u00e9cart
+// maximal. Si un produit d\u00e9passe l'autre au prochain relev\u00e9, le badge doit
+// bouger — sinon la page affirme une supériorité que ses propres chiffres démentent.
+{
+  const avecEcart = PRODUCTS.filter((p) => p.priceNow && p.priceLaunch);
+  const ecartDe = (p) => {
+    const m = String(p.priceNow).match(/(\d+)/);
+    const l = String(p.priceLaunch).match(/(\d+)/);
+    return m && l ? 1 - Number(m[1]) / Number(l[1]) : -1;
+  };
+  const max = avecEcart.slice().sort((a, b) => ecartDe(b) - ecartDe(a))[0];
+  const badge = (p) => (p.badge && String(p.badge.label).toLowerCase());
+  const porteurs = PRODUCTS.filter((p) => /baisse|\u00e9cart/.test(badge(p) || ""));
+  if (porteurs.length && !porteurs.includes(max)) {
+    problemes.push(
+      `lib/products.js : le badge « ${porteurs[0].badge.label} » est sur ${porteurs[0].id} alors que le plus grand écart calculé est sur ${max.id} (${Math.round(ecartDe(max) * 100)} % contre ${Math.round(ecartDe(porteurs[0]) * 100)} %)`
+    );
+  }
 }
 
 const doublonsTitres = [...vus].filter(([, n]) => n > 1).map(([t, n]) => `${n}× « ${t} »`);

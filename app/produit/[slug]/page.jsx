@@ -21,7 +21,7 @@ import PhoneSVG from "../../../components/PhoneSVG.jsx";
 import ProductArt from "../../../components/ProductArt.jsx";
 import Disclosure from "../../../components/Disclosure.jsx";
 
-/** 18 fiches prérendues ; une URL inconnue répond 404, pas une fiche vide. */
+/** 17 fiches prérendues ; une URL inconnue répond 404, pas une fiche vide. */
 export const dynamicParams = false;
 export function generateStaticParams() {
   return FICHE_SLUGS.map((slug) => ({ slug }));
@@ -345,8 +345,8 @@ export default async function FicheProduit({ params }) {
                     ) : (
                       <span className="price-note">
                         {v.reduction
-                          ? `−${v.reduction.pourcent} % sous le prix Apple au relevé`
-                          : "Notice complète, prix chez Amazon"}
+                          ? `sous le prix Apple au relevé du ${PRIX_DATE_FR}`
+                          : "Notice complète, prix affiché par Amazon"}
                       </span>
                     )}
                     {v.reduction && <span className="eco">−{v.reduction.pourcent} %</span>}

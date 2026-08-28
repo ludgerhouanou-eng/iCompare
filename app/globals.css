@@ -118,7 +118,6 @@ p { margin: 0 0 14px; }
   background: conic-gradient(from 210deg, #3d6ef7, #9a6df0, #e35fa1, #ffd9ec, #3d6ef7);
   box-shadow: 0 0 14px rgba(61, 110, 247, 0.35);
 }
-.brand-year { color: var(--text-3); font-weight: 500; }
 .nav { display: flex; gap: 6px; flex-wrap: wrap; }
 .nav a {
   padding: 8px 14px;

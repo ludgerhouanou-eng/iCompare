@@ -32,7 +32,7 @@ const SLIDES = [
     src: "/phones/iphone-16.png",
     alt: "iPhone 16 bleu, face avant et face arrière",
     kicker: "Le bon plan",
-    title: "iPhone 16 : l'essentiel de l'iPhone 17, à moindre prix",
+    title: "iPhone 16 : l'essentiel de l'iPhone 17, avec le plus large écart relevé sous son prix Apple",
   },
 ];
 

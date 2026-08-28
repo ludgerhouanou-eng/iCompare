@@ -27,6 +27,15 @@ reçoit** : il lit le HTML statique sorti par Next et vérifie, page par page �
   `<title>` de la page mère, après qu'une réécriture eut fait disparaître
   `generateMetadata` : le build, lui, passait) ;
 - `rel=canonical` présent et cohérent avec l'URL de la page ;
+- aucune formulation de prix du jour, de promo en cours ou de rareté (liste
+  dans `HORS_LIMITES`), **ni dans le texte visible, ni dans le `<head>`** — la
+  `meta description` est lue par le visiteur autant que le corps de page ;
+- aucun `<title>` qui promette un prix que la page ne montre pas ;
+- aucun pourcentage écrit deux fois dans la même carte ;
+- pas de suffixe de domaine revendiqué à tort : la marque ne peut afficher
+  `.fr` que si `SITE.url` se termine bien par `.fr` ;
+- le badge de comparaison du comparatif posé sur le produit dont **l'écart**
+  réellement calculé est le plus fort (`PRODUCTS` lu par le contrôle).
 - chaque lien Amazon portant le tag d'associé configuré, `rel="sponsored"`,
   sans `?tag=` vide ;
 - aucun `href="null"` (produit non vendu → bouton masqué, pas lien cassé) ;
@@ -48,6 +57,16 @@ Il sort **code 1** au premier problème : à passer avant chaque déploiement
 (ou en CI). Un contrôle qui ne peut pas échouer ne protège rien — il a été
 validé en retirant volontairement le canonical de l'accueil, ce qu'il a
 signalé.
+
+
+`npm run check` lit des fichiers ; il ne voit donc pas ce qui n'existe qu'à
+l'exécution. `tools/audit-local.py` complète la couverture : il parcourt les 30
+URL du build **servies par `npm run start`** et vérifie qu'aucune ne répond en
+erreur, que chaque `href` interne et chaque ancre `#…` tombent juste, que les
+images référencées sont dans `public/`, et qu'aucune des formulations interdites
+ne repasse par un chemin que le contrôle statique manquerait. Il rend la main
+sur 1 (sortie non nulle) s'il trouve quoi que ce soit — il est fait pour être
+lancé avant une mise en ligne.
 
 ## Déployer sur Vercel (2 façons)
 
@@ -86,7 +105,7 @@ app/
   guides/page.jsx     → index des guides de vérification (trafic longue traîne)
   guides/[slug]/      → 8 guides prérendus, une question par URL, 404 sinon
   globals.css         → design system (blanc + teintes bleu/rose)
-  sitemap.js          → 21 URL (utilise SITE.url)
+  sitemap.js          → 30 URL (utilise SITE.url)
   robots.js           → robots.txt + lien vers le sitemap
 components/
   HeroSlider.jsx      → diaporama (auto, flèches, points, swipe)
@@ -113,11 +132,13 @@ Un **identifiant de suivi est posé sur chaque lien sortant** :
 `ludgerhouanou-21`, relevé dans un lien que l'éditeur a fourni (et qui se
 termine par le suffixe des programmes européens). Tous les liens du site sont
 fabriqués par `amazonLink()` dans `lib/site.js`, donc rien ne part « nu » ni
-avec un tag collé deux fois : **53 liens Amazon sur les 21 pages** — 25 sur
-`/`, `/comparatif` et `/boutique` (16 ASIN distincts), 12 sur `/bons-plans`
-dont le bouton « toutes les offres », 16 sur les fiches produit (la fiche
-iPhone 18 en est dépourvue : aucun ASIN vérifié n'existe pour ce modèle). Les
-URL des données structurées JSON-LD portent le même tag.
+avec un tag collé deux fois : **87 liens Amazon sur les 30 pages**, tous avec
+`rel="sponsored nofollow"` — 41 sur `/boutique`, 16 sur les fiches produit (17
+fiches, celle de l'iPhone 18 en est dépourvue : aucun ASIN vérifié n'existe
+pour ce modèle), 12 sur `/bons-plans` dont le bouton « toutes les offres », 8
+sur `/comparatif`, 1 par guide sur les 8 pages de `/guides`, 2 sur `/`. Seize
+ASIN distincts au total. Les URL des données structurées JSON-LD portent le
+même tag : 174 occurrences `amazon.fr…tag=ludgerhouanou-21` dans le HTML livré.
 
 Un `next build` **avertit dans les journaux** si la configuration ne peut pas
 créditer de commission (tag placeholder ou absent, suffixe non reconnu, ou
@@ -428,7 +449,7 @@ Ko. `npm run check` veille au plafond (220 Ko par page). Bascule chaque carte
 sur une photo Link Builder (`image:`, plus bas) et le SVG sort de la page : un
 `<img>` pèse ~200 octets de HTML, contre ~3,7 Ko par illustration.
 
-### Aucun montant sur les 21 pages
+### Aucun montant sur les 30 pages
 
 Choix de l'éditeur, et obligation du règlement : les Politiques du Programme
 Partenaires Amazon FR (« Liens présents sur votre site », mise à jour du
@@ -472,6 +493,52 @@ comme variable d'environnement de build. Un seul drapeau, dans `lib/prix.js`
 les pages et le contrôle basculent ensemble, ils ne peuvent pas se contredire.
 Dans ce mode, le contrôle redevient ce qu'il était : recoupement de chaque
 `Offer` avec le montant affiché sur la même page (16 prix vérifiés).
+
+### Ce que les pages ne promettent pas (relevé du 28 août 2026)
+
+Une page peut être juste au build et fausse à la lecture. Le premier balayage
+du site livré a trouvé **quatorze phrases qui se contredisaient entre elles,
+avec le catalogue, ou avec notre propre politique** — corrigées, puis
+interdites par `npm run check`. Les trois classes de faute, et ce qu'on en a
+fait :
+
+- **la promo en cours affirmée.** `lib/catalog.js` faisait suivre la fiche des
+  AirPods Pro 3 de « En promo sur Amazon en ce moment. » — une promotion datée
+  que rien ne retire du site le jour où elle s'arrête, exactement ce que la
+  page « Liens présents sur votre site » du règlement interdit. La `verdict` de
+  `lib/products.js` ajoutait « affiche maintenant ses prix les plus bas depuis
+  sa sortie ». Les deux sont parties ;
+- **le superlatif que les données ne soutiennent pas.** « Meilleur prix » au
+  badge de l'iPhone 16, « L'ANC au meilleur prix d'Apple », « souvent les plus
+  grosses économies » de la boutique, « les meilleures économies du catalogue »
+  — alors que le catalogue lui-même montre −27 % sur la Watch Series 11 et
+  −26 % sur l'iPad Air M3 contre −23 % au mieux sur un iPhone. Le badge dit
+  désormais « La plus forte baisse relevée » : c'est exactement ce que la table
+  mesure, et le check vérifie que le produit qui le porte est bien celui de
+  l'écart maximal ;
+- **ce qui est annoncé mais pas montré.** Une section « Prix & où acheter au
+  bon moment » avec « Prix relevés le 27 août » au-dessus d'un tableau sans un
+  seul prix ; seize fiches titrées « … prix et avis » alors qu'aucun montant n'y
+  figure ; un titre de carrousel « à moindre prix » ; et un montant — « 12 euros »
+  — écrit en toutes lettres dans un guide. Les titres de fiches disent
+  maintenant « écart au prix Apple », la section s'appelle « Où acheter, et à
+  quel moment » et annonce elle-même qu'elle n'affiche aucun prix.
+
+S'y ajoute une revendication qui n'appartient pas au site : la marque portait
+un suffixe « .fr ». Le domaine servi est un sous-domaine de déploiement, `.fr`
+exige un contact UE et n'est pas déposé — afficher le suffixe, c'est promettre
+un domaine qu'on ne possède pas. Le `.fr` est sorti de l'en-tête et du pied de
+page (le texte `amazon.fr` des liens et des mentions légales reste, lui : c'est
+le nom du marchand, pas le nôtre).
+
+`tools/check-build.mjs` tient maintenant ces lignes, sur le texte **et** sur le
+`<head>` : liste de formulations interdites (promo en cours, prix du jour,
+rareté, superlatif de prix), montant dans une `meta description`, titre qui
+promet un prix absent, pourcentage écrit deux fois dans la même carte, suffixe
+de domaine revendiqué à tort, et badge de comparaison replacé sur le produit dont
+l'écart est réellement le plus fort. Les six règles ont été essayées une à une en réinjectant la faute dans
+le source : elles mordent (6 captures sur 6), et le site corrigé passe.
+
 
 ### Un seul prix par produit
 

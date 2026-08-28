@@ -56,14 +56,14 @@ export default function RootLayout({ children }) {
           <div className="container header-inner">
             <a className="brand" href="/" aria-label="Accueil iCompare">
               <span className="brand-mark" aria-hidden="true"></span>
-              iCompare<span className="brand-year">.fr</span>
+              iCompare
             </a>
             <nav className="nav" aria-label="Navigation principale">
               <a href="/comparatif">Comparatif 16 / 17 / 18</a>
               <a href="/boutique">Boutique Apple</a>
               <a href="/bons-plans">Bons plans</a>
               <a href="/guides">Guides vérif</a>
-              <a href="/comparatif#prix">Où acheter</a>
+              <a href="/comparatif#acheter">Où acheter</a>
               <a href="/comparatif#iphone-18">iPhone 18 : rumeurs</a>
               <a href="/comparatif#faq">FAQ</a>
             </nav>
@@ -78,7 +78,7 @@ export default function RootLayout({ children }) {
               <div>
                 <a className="brand" href="/">
                   <span className="brand-mark" aria-hidden="true"></span>
-                  iCompare<span className="brand-year">.fr</span>
+                  iCompare
                 </a>
                 <p>
                   Le comparateur iPhone qui va droit au but : fiches techniques comparées,
@@ -92,7 +92,7 @@ export default function RootLayout({ children }) {
                   <li><a href="/">Accueil</a></li>
                   <li><a href="/comparatif">Comparatif iPhone 16 / 17 / 18</a></li>
                   <li><a href="/boutique">Boutique Apple (Watch, iPad, AirPods…)</a></li>
-                  <li><a href="/comparatif#prix">Où acheter, et à quel prix vérifié</a></li>
+                  <li><a href="/comparatif#acheter">Où acheter, et à quel moment</a></li>
                   <li><a href="/guides">Guides : compatibilité, garantie, eSIM</a></li>
                   <li><a href="/comparatif#faq">Questions fréquentes</a></li>
                 </ul>

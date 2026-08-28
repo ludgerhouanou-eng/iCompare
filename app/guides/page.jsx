@@ -79,7 +79,7 @@ export default function GuidesIndex() {
       {Object.entries(parGroupe).map(([groupe, guides]) => (
         <section className="section" key={groupe}>
           <div className="container">
-            <p className="kicker">{groupe}</p>
+            <p className="kicker">{guides.length} guide{guides.length > 1 ? "s" : ""} dans cette famille</p>
             <h2 className="section-title">{groupe}</h2>
             <div className="grid-3 guide-index">
               {guides.map((g) => (
