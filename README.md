@@ -112,6 +112,34 @@ elle en est dépourvue). À réserver aux liens qui **montrent le produit annonc
 sur la fiche** : un lien qui mène ailleurs que le produit décrit viole le
 contrat Associates et coûte des conversions.
 
+## Ordre réel des étapes (le plus rentable)
+
+Le compteur du programme Amazon démarre **à l'inscription**, pas à la mise en
+ligne : 3 ventes éligibles en 180 jours, sinon le compte est fermé et les
+commissions sont perdues. Dans cet ordre :
+
+1. **Publier le site** sur un domaine que vous contrôlez (pas de `*.vercel.app`
+   durable : Amazon vérifie le domaine déclaré).
+2. **Déclarer ce domaine** dans le compte Associates du marché visé, et seulement
+   ensuite demander un identifiant de suivi de ce marché.
+3. **Renseigner `SITE_URL` et `AMAZON_TAG`** en variables d'environnement,
+   repousser, vérifier dans le HTML livré que chaque lien porte le bon tag.
+
+En attendant : `AMAZON_TAG=""` produit des liens Amazon **sans tag** (le build ne
+sonne plus l'alerte « tag manquant » comme une erreur de marché, mais elle reste
+affichée) — c'est propre et conforme, simplement non rémunéré. Retirez alors la
+mention « Partenaire Amazon » du pied de page : elle affirme une qualité que vous
+n'avez pas encore auprès d'Amazon Europe.
+
+### Éligibilité du nom de domaine
+
+AFNIC réserve le `.fr` aux personnes **résidant dans un État membre de l'UE, en
+Islande, au Liechtenstein, en Norvège ou en Suisse** (et aux entités qui y ont
+leur siège). Un résident hors de cette liste ne peut pas enregistrer un `.fr`
+en son nom propre : préférer un `.com` descriptif (vérifier la disponibilité
+via RDAP avant d'acheter) ou un enregistrement par l'intermédiaire d'une
+personne/structure éligible.
+
 ## Avant de mettre en ligne (à faire)
 
 1. **Domaine** → `lib/site.js` : `SITE.url = "https://votredomaine.fr"`
