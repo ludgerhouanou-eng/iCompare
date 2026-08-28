@@ -81,7 +81,8 @@ app/
   layout.jsx          → header, nav, footer, métas globales
   page.jsx            → Accueil (/) : hero + DIAPORAMA + 3 cartes iPhone
   comparatif/page.jsx → Page SEO principale : 35 specs, écarts datés, rumeurs, FAQ
-  boutique/page.jsx   → 15 produits, 5 onglets (Watch, iPhone, iPad, audio, accessoires)
+  boutique/page.jsx   → 5 rayons cliquables (espace d'achat Amazon) + 15 produits
+                        avec un visuel par produit
   globals.css         → design system (blanc + teintes bleu/rose)
   sitemap.js          → 21 URL (utilise SITE.url)
   robots.js           → robots.txt + lien vers le sitemap
@@ -97,7 +98,8 @@ lib/
   products.js         → iPhone 16/17/18 : specs, verdicts, FAQ, barres
   catalog.js          → 15 produits boutique (champ "image" à renseigner)
 public/
-  phones/             → photos iPhone (gamme, face à face, 16, 17, 18)
+  produits/           → 5 illustrations de rayon (JPG 14-27 Ko, dessinées pour le site)
+  phones/             → rendus iPhone (gamme, face à face, 16, 17, 18)
   og-comparatif.jpg   → image Open Graph
 ```
 
@@ -310,14 +312,78 @@ personnalisée.
 comparateur qui ment sur un montant perd plus de clics qu'il n'en gagne :
 changez la date quand vous revoyez les chiffres, et le site redevient honnête.
 
+### Les cinq rayons de la boutique
+
+La boutique est rangée en cinq rayons, une tuile chacun, dans l'esprit de la
+page « Apple » d'Amazon.fr : **la tuile entière — l'image comprise — ouvre
+l'espace d'achat du rayon**, où Amazon liste lui-même tous les modèles,
+tailles, coloris et capacités, avec le prix et le stock du jour. Chaque en-tête
+de section répète le lien (« Tout le rayon iPad sur Amazon »), et le visuel de
+chaque produit est cliquable vers la fiche Amazon de ce produit.
+
+Les cinq destinations sont des pages officielles du store Apple, relevées dans
+sa barre de navigation puis stockées dans `lib/site.js` (`APPLE_STORE`). Elles
+ont été revérifiées une par une en HTTP le 28 août 2026 avec le tag
+partenaire en paramètre :
+
+| Rayon iCompare | Espace d'achat Amazon FR | HTTP relevé |
+| --- | --- | --- |
+| iPhone | `stores/page/088CCA0B-B604-40D3-A70F-09E7504B164F` | 200 · « Amazon.fr: Apple: iPhone » |
+| iPad | `stores/page/BB383B02-5AC6-4C18-8606-DDB879140AD1` | 200 · « Amazon.fr: Apple: iPad » |
+| Apple Watch | `stores/page/FD773DA5-056E-45F5-9EE1-9705C9BBAA42` | 200 · « Amazon.fr: Apple: Apple Watch » |
+| Audio (AirPods) | `stores/page/06893AEF-254D-4C91-9ECD-6F00D0B265C3` | 200 · « Amazon.fr: Apple: AirPods » |
+| Accessoires | `stores/page/CDC2986B-5D39-4958-A019-3E04D21C19A0` | 200 · « Amazon.fr: Apple: Accessoires » |
+| Espace Apple (racine) | `stores/page/5054D112-2A90-487A-8F8A-A4C700E6C15C` | 200 · « Amazon.fr: Apple » |
+
+Règle du dépôt, plus stricte qu'à l'habitude sur cette page : **aucune URL
+Amazon n'est devinée**. Pas de `srs=`, pas de `node=`, pas d'ASIN approximatif,
+pas de lien « au feeling ». Si un rayon n'a pas d'espace vérifié,
+`storeSpaceUrl()` renvoie `null` et le composant n'affiche pas de lien — il ne
+l'invente pas. `npm run check` refuse une tuile dont la page de store ne figure
+pas dans `APPLE_STORE`, dont le tag manque, dont `rel="sponsored"` a disparu,
+ou qui manquerait à l'appel (5 tuiles attendues = 5 catégories).
+
+**Les images.** `public/produits/rayon-*.jpg` habillent les tuiles : cinq
+illustrations de 14 à 27 Ko, dessinées pour le site, sans logo ni texte
+incrustés, `alt` = « Illustration iCompare : le rayon … ». Les 15 produits ont
+chacun leur illustration vectorielle (`ProductArt` pour une montre, des
+écouteurs, un chargeur ; `PhoneSVG` pour un iPhone), colorée par produit —
+l'Ultra 3 en titane et la SE 3 Starlight ne se ressemblent pas.
+
+Pourquoi ce ne sont pas les photos officielles d'Amazon : le Programme
+Partenaires n'autorise à publier que les visuels qu'il fournit lui-même (PNG
+générés par Link Builder, ou `Images.primary.large` de la PA API). Rapatrier à
+la main une image `images-fr.amazon.com/…` serait du scraping d'actifs, et la
+PA API suppose 3 ventes qualifiantes dans les 180 jours — le compte n'y est
+pas encore.
+
+Le branchement est prêt : ajoutez `image: "…"` (au besoin
+`imageWidth` / `imageHeight`) sur un produit de `lib/catalog.js`. La carte
+affiche alors la photo à la place du vectoriel, avec un `alt` construit sur le
+nom et le sous-titre du produit ; les dimensions sont exigées par le contrôle
+de build, pour qu'aucune carte ne fasse danser la page au chargement.
+
 ### Poids des pages
 
-Le markup vectoriel (`PhoneSVG`, 1 à 2 Ko chacun) n'est plus gardé que sur la
-fiche dédiée ; les cartes de la boutique utilisent un glyphe de ~300 octets.
-Mesuré sur le build statique, `comparatif.html` passe de **185,1 Ko à 158 Ko**
-(brut) et la grille boutique perd 16 Ko de SVG. En gzip — ce qui traverse
-vraiment le réseau — la page boutique est à parité (14,1 contre 14,5 Ko) tout
-en restant lisible sans JavaScript.
+Mesuré sur le build statique actuel (`gzip -9` sur `.next/server/app/*.html`,
+donc ce qui traverse vraiment le réseau) :
+
+| Page | HTML brut | gzip |
+| --- | --- | --- |
+| `/` | 46,9 Ko | 9,2 Ko |
+| `/comparatif` | 158,3 Ko | 25,8 Ko |
+| `/boutique` | 157,8 Ko | 21,5 Ko |
+| `/bons-plans` | 46,7 Ko | 7,5 Ko |
+| les 17 fiches produit | 33,9 Ko en moyenne | 6,8 Ko |
+| **les 21 pages** | **985 Ko** | **179,4 Ko** |
+
+Le visuel est réapparu sur les 15 cartes de la boutique à dessein — demande de
+l'éditeur : une image par produit. Coût mesuré en A/B (même build, carte au
+glyphe de 300 octets contre carte illustrée) : **+55,3 Ko de HTML et +6,2 Ko
+de gzip pour 15 illustrations**, la page passant de 102,5/15,3 Ko à 157,8/21,5
+Ko. `npm run check` veille au plafond (220 Ko par page). Bascule chaque carte
+sur une photo Link Builder (`image:`, plus bas) et le SVG sort de la page : un
+`<img>` pèse ~200 octets de HTML, contre ~3,7 Ko par illustration.
 
 ### Aucun montant sur les 21 pages
 
@@ -339,7 +405,7 @@ statique ne sait pas détecter. **Aucune page n'affiche donc de prix** : ni
 
 Ce qui reste affiché, et pourquoi c'est défendable :
 
-- **un écart daté** — « −23 % sous le prix de lancement Apple, relevés le
+- **un écart daté** — « −23 % sous le prix de lancement Apple, relevé le
   27 août 2026 ». Un fait historique, pas une offre en cours ; la date est
   rappelée à côté, et le bandeau d'alerte de vétusté (`PRIX_VETUSTE_MAX_JOURS`)
   prévient quand le relevé n'a plus à être cru ;

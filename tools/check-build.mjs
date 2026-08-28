@@ -13,6 +13,8 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { euroMini, AFFICHER_MONTANTS } from "../lib/prix.js";
+import { APPLE_STORE, storeSpaceUrl } from "../lib/site.js";
+import { CATEGORIES } from "../lib/catalog.js";
 
 const APP = join(".next", "server", "app");
 const TAILLE_MAX_KO = 220; // HTML d'une page, en Ko — au-delà, on a déraillé
@@ -187,6 +189,65 @@ for (const f of htmls) {
     if (consultations !== cartes) {
       ajouter(f, `${cartes} cartes mais ${consultations} bouton « Consulter le prix sur Amazon » : une carte sans porte de sortie`);
     }
+
+    // --- Rayons (grille « rangement ») ------------------------------------
+    // Une tuile qui ne mène nulle part, ou à un espace d'achat inventé, est le
+    // seul péché impardonnable de cette page : c'est elle qui porte les
+    // commissions. Sont donc exigés : un nombre de tuiles égal au nombre de
+    // catégories, une page de store Apple réellement existante (liste
+    // relevée en HTTP le 28/08/2026 dans lib/site.js), le tag partenaire,
+    // et le rel="sponsored".
+    const tuiles = h.match(/<a[^>]*class="rayon"[^>]*>/g) || [];
+    if (tuiles.length !== CATEGORIES.length) {
+      ajouter(
+        f,
+        `${tuiles.length} tuiles de rayon pour ${CATEGORIES.length} catégories : la grille et CATEGORIES ont décroché`
+      );
+    }
+    const utilisees = [];
+    for (const b of tuiles) {
+      const href = ((/href="([^"]*)"/.exec(b) || [])[1] || "").replace(/&amp;/g, "&");
+      const page = (/\/stores\/page\/([0-9A-F-]{36})\//.exec(href) || [])[1] || null;
+      if (!page) {
+        ajouter(f, `tuile de rayon sans page de store : ${href.slice(0, 80) || "(href vide)"}`);
+        continue;
+      }
+      if (!Object.values(APPLE_STORE.rayons).includes(page) && page !== APPLE_STORE.racine) {
+        ajouter(f, `tuile vers /stores/page/${page} : espace inconnu de lib/site.js (non vérifié en HTTP)`);
+      }
+      if (!new RegExp(`[&?]tag=${tag}(&|$)`).test(href)) {
+        ajouter(f, `tuile ${page} sans tag partenaire : aucune commission sur ce clic`);
+      }
+      if (!/rel="sponsored nofollow noopener"/.test(b)) {
+        ajouter(f, `tuile ${page} sans rel="sponsored" (lien payant non déclaré aux moteurs)`);
+      }
+      utilisees.push(page);
+    }
+    for (const c of CATEGORIES) {
+      const url = storeSpaceUrl(c.store);
+      if (!url) {
+        ajouter(f, `catégorie ${c.id} sans espace d'achat : on retire le lien, on n'invente pas un identifiant de page`);
+        continue;
+      }
+      if (!h.includes(url.replace(/&/g, "&amp;"))) {
+        ajouter(f, `rayon « ${c.name} » : son espace d'achat n'apparaît nulle part dans la page (ni tuile, ni en-tête de section)`);
+      }
+    }
+    if (new Set(utilisees).size < 5) {
+      ajouter(f, `${new Set(utilisees).size} espaces distincts pour ${tuiles.length} tuiles : deux rayons se marchent dessus`);
+    }
+
+    // --- Visuels : une image par produit, et pas de saut de mise en page ---
+    const visuels = (h.match(/class="art-stage art-stage-card"/g) || []).length;
+    if (visuels !== cartes) {
+      ajouter(f, `${cartes} cartes mais ${visuels} visuels produits : une carte sans image`);
+    }
+    for (const img of h.match(/<img\b[^>]*>/g) || []) {
+      const manquants = ["width", "height", "loading"].filter((a) => !new RegExp(`\\b${a}="`).test(img));
+      if (manquants.length) {
+        ajouter(f, `<img> sans ${manquants.join(", ")} : la page danse au chargement`);
+      }
+    }
   }
 
   // 9. Garde-fou de poids
@@ -204,6 +265,28 @@ if (/votredomaine/i.test(corps)) {
     "domaine placeholder « votredomaine.fr » dans le HTML livré : canonical, sitemap et JSON-LD pointent hors de votre site. " +
       "Réglez-le avec SITE_URL (Vercel → Environment Variables) ou lib/site.js, puis redéployez."
   );
+}
+
+// 11. Visuels de rayon : locaux, présents, compressés. Un hotlink d'une image
+// Amazon (images-fr.amazon.com) est interdit hors contenus fournis par le
+// Programme Partenaires — d'où des fichiers dans le dépôt, et un contrôle.
+for (const c of CATEGORIES) {
+  if (!c.visuel) {
+    problemes.push(`rayon ${c.id} sans visuel : la tuile serait vide`);
+    continue;
+  }
+  const fichier = join("public", c.visuel.replace(/^\//, ""));
+  if (!existsSync(fichier)) {
+    problemes.push(`visuel de rayon introuvable : ${c.visuel} (attendu en ${fichier})`);
+    continue;
+  }
+  const ko = statSync(fichier).size / 1024;
+  if (ko > 90) {
+    problemes.push(`${c.visuel} pèse ${ko.toFixed(0)} Ko : redimensionner (six PNG de 1,4 Mo ont déjà pesé 8 Mo de dépôt)`);
+  }
+  if (/\.png$/i.test(c.visuel)) {
+    problemes.push(`${c.visuel} en PNG : compresser en JPG/WebP pour une photo`);
+  }
 }
 
 const doublonsTitres = [...vus].filter(([, n]) => n > 1).map(([t, n]) => `${n}× « ${t} »`);

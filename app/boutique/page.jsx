@@ -1,6 +1,6 @@
 import CategoryTabs from "../../components/CategoryTabs.jsx";
 import ProductCard from "../../components/ProductCard.jsx";
-import { SITE } from "../../lib/site.js";
+import { SITE, storeSpaceUrl, storePageUrl, APPLE_STORE } from "../../lib/site.js";
 import { ficheUrl } from "../../lib/fiches.js";
 import {
   CATEGORIES,
@@ -104,7 +104,9 @@ export default function BoutiquePage() {
         <nav className="breadcrumbs" aria-label="Fil d'Ariane">
           <a href="/">Accueil</a> / Boutique Apple
         </nav>
-        <p className="kicker">Boutique · {BOUTIQUE_PRODUCTS.length} références · prix et stock chez Amazon</p>
+        <p className="kicker">
+          Boutique · {CATEGORIES.length} rayons · {BOUTIQUE_PRODUCTS.length} références · prix et stock chez Amazon
+        </p>
         <h1>
           L'univers Apple : Apple Watch, anciens iPhone, iPad{" "}
           <span className="grad-text">&amp; AirPods</span>
@@ -121,7 +123,82 @@ export default function BoutiquePage() {
         </p>
       </div>
 
+      {/* ---------------------------------------------------------------
+          Le « rangement » : cinq rayons, cinq espaces d'achat ouverts sur
+          Amazon. La tuile tout entière est cliquable (image comprise) — c'est
+          ce que demande le visiteur : « cliquer sur l'image pour accéder à
+          l'espace d'achat », et tomber sur tous les modèles du rayon.
+          --------------------------------------------------------------- */}
       <section className="section" style={{ paddingTop: 20 }}>
+        <div className="container">
+          <div className="rayon-tete">
+            <div>
+              <p className="kicker">Le rangement</p>
+              <h2 className="section-title" style={{ marginBottom: 6 }}>
+                Cinq rayons, cinq espaces d'achat
+              </h2>
+              <p className="section-sub" style={{ marginBottom: 0 }}>
+                Cliquez sur un rayon : vous ouvrez la page Apple de ce rayon sur
+                Amazon.fr, où défilent tous les modèles, tailles, coloris et
+                capacités — avec le prix et le stock du jour. C'est lui qui fait
+                foi, pas une capture que nous aurions faite la semaine dernière.
+              </p>
+            </div>
+            <a
+              className="btn btn-ghost"
+              href={storePageUrl(APPLE_STORE.racine)}
+              target="_blank"
+              rel="sponsored nofollow noopener"
+            >
+              Tout l'espace Apple →
+            </a>
+          </div>
+
+          <div className="rayon-grid">
+            {CATEGORIES.map((c) => {
+              const n = BOUTIQUE_PRODUCTS.filter((x) => x.category === c.id).length;
+              return (
+                <a
+                  key={c.id}
+                  className="rayon"
+                  href={storeSpaceUrl(c.store)}
+                  target="_blank"
+                  rel="sponsored nofollow noopener"
+                  aria-label={`Espace d'achat ${c.espace} sur Amazon — ${n} références en sélection iCompare`}
+                >
+                  <span className="rayon-img">
+                    <img
+                      src={c.visuel}
+                      width="800"
+                      height="436"
+                      alt={`Illustration iCompare : le rayon ${c.name}`}
+                      loading="lazy"
+                    />
+                  </span>
+                  <span className="rayon-body">
+                    <strong>
+                      <span aria-hidden="true">{c.icon}</span> {c.name}
+                    </strong>
+                    <small>
+                      {c.blurb} · {n} références ici
+                    </small>
+                    <span className="rayon-cta">Tout afficher sur Amazon →</span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+
+          <p className="rayon-legende">
+            Illustrations dessinées par iCompare, et non des visuels Amazon : le
+            Programme Partenaires ne permet de publier que les images qu'il met
+            lui-même à disposition. En cliquant, vous quittez iCompare pour
+            l'espace Apple d'Amazon.fr, où nos liens sont identifiés.
+          </p>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 10 }}>
         <div className="container">
           <CategoryTabs
             categories={CATEGORIES.map((c) => ({
@@ -144,6 +221,14 @@ export default function BoutiquePage() {
                   <span aria-hidden="true">{c.icon}</span> {c.name}
                 </h2>
                 <p>{c.longBlurb}</p>
+                <a
+                  className="cat-espace"
+                  href={storeSpaceUrl(c.store)}
+                  target="_blank"
+                  rel="sponsored nofollow noopener"
+                >
+                  Tout le rayon {c.espace} sur Amazon →
+                </a>
               </div>
               <div className="grid-3">
                 {BOUTIQUE_PRODUCTS.filter((p) => p.category === c.id).map((p) => (
@@ -186,7 +271,7 @@ export default function BoutiquePage() {
             </a>
             <a className="card profile-card" href="/bons-plans">
               <h4>💸 Les remises du moment</h4>
-              <p>Les références passées sous leur prix Apple, triées par économie réelle en euros.</p>
+              <p>Les références passées sous leur prix Apple, triées par écart — le montant, lui, se lit chez Amazon.</p>
               <span className="badge badge-green">Bons plans</span>
             </a>
           </div>

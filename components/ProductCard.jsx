@@ -1,6 +1,51 @@
-import ProductGlyph from "./ProductGlyph.jsx";
+import ProductArt from "./ProductArt.jsx";
+import PhoneSVG from "./PhoneSVG.jsx";
 import { ficheUrl, getFiche } from "../lib/fiches.js";
 import { AFFICHER_MONTANTS, mentionEcart } from "../lib/prix.js";
+
+/**
+ * Le visuel du produit. Un `image` fourni (URL d'un visuel officiel récupéré
+ * via Link Builder / la PA API) prime ; sinon on dessine le produit soi-même,
+ * en vectoriel : 1 Ko, net à toute résolution, jamais une photo volée.
+ * `kind` + `artColor` + `artDark` sont saisis par produit, donc l'Apple Watch
+ * Ultra 3 en titane et la SE 3 Starlight ne se ressemblent pas.
+ */
+function Visuel({ product, height = 150 }) {
+  if (product.image) {
+    return (
+      <img
+        className="product-photo"
+        src={product.image}
+        width={product.imageWidth || 320}
+        height={product.imageHeight || 240}
+        alt={`${product.name} — ${product.sub}`}
+        loading="lazy"
+      />
+    );
+  }
+  const label = `Illustration : ${product.name}, ${product.sub}`;
+  if (product.kind === "phone") {
+    return (
+      <PhoneSVG
+        color={product.artColor}
+        colorDark={product.artDark}
+        id={product.id}
+        height={height}
+        label={label}
+      />
+    );
+  }
+  return (
+    <ProductArt
+      kind={product.kind}
+      color={product.artColor}
+      colorDark={product.artDark}
+      id={product.id}
+      height={height}
+      label={label}
+    />
+  );
+}
 
 /**
  * Carte produit de la boutique — rendue côté serveur, donc présente dans le
@@ -17,10 +62,11 @@ import { AFFICHER_MONTANTS, mentionEcart } from "../lib/prix.js";
  * pas détecter.
  *
  * D'où le contrat de cette carte : le prix vit chez Amazon, atteint par le
- * bouton ; la carte ne garde qu'un rappel daté, formulé en écart au prix de
- * lancement Apple (un fait historique, qui ne se périme pas), jamais en « offre
- * du moment ». Le garde-fou `npm run check` vérifie qu'aucun « € » ne subsiste
- * sur /boutique.
+ * visuel ET par le bouton ; la carte ne garde qu'un rappel daté, formulé en
+ * écart au prix de lancement Apple (un fait historique, qui ne se périme pas),
+ * jamais en « offre du moment ». Le garde-fou `npm run check` vérifie
+ * qu'aucun « € » ne subsiste sur /boutique et qu'aucune carte n'est sans
+ * visuel ni sans porte de sortie.
  */
 export default function ProductCard({ product, urlAffilie }) {
   const fiche = ficheUrl(product.id);
@@ -28,6 +74,10 @@ export default function ProductCard({ product, urlAffilie }) {
   // un seul relevé en amont, deux rendus en aval — jamais deux chiffres à jour
   // indépendamment l'un de l'autre.
   const reduction = getFiche(product.id)?.reduction ?? null;
+  // Le visuel est cliquable : c'est « cliquer sur l'image pour accéder à
+  // l'espace d'achat ». Sans lien affilié connu, il mène à notre fiche, et non
+  // pas à une destination devinée.
+  const destination = urlAffilie || fiche;
 
   return (
     <article className="card phone-card" data-cat={product.category}>
@@ -35,14 +85,26 @@ export default function ProductCard({ product, urlAffilie }) {
         <span className={`badge badge-${product.badgeTone} phone-badge`}>{product.badge}</span>
       )}
 
-      <div className="art-stage art-stage-compact">
-        <ProductGlyph kind={product.kind} color={product.artColor} label={product.name} />
-        <div className="art-meta">
-          <h3>
-            <a href={fiche}>{product.name}</a>
-          </h3>
-          <p className="phone-tag">{product.sub}</p>
-        </div>
+      <a
+        className="product-hit"
+        href={destination}
+        {...(urlAffilie ? { target: "_blank", rel: "sponsored nofollow noopener" } : {})}
+        aria-label={
+          urlAffilie
+            ? `Ouvrir ${product.name} sur Amazon`
+            : `Fiche ${product.name} sur iCompare`
+        }
+      >
+        <span className="art-stage art-stage-card">
+          <Visuel product={product} />
+        </span>
+      </a>
+
+      <div className="art-meta">
+        <h3>
+          <a href={fiche}>{product.name}</a>
+        </h3>
+        <p className="phone-tag">{product.sub}</p>
       </div>
 
       <p className="product-tagline">{product.tagline}</p>
