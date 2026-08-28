@@ -1,4 +1,4 @@
-import { SITE } from "../../lib/site.js";
+import { SITE, offresLink } from "../../lib/site.js";
 import { FICHES_PROMO, FICHES_EN_VENTE, ficheUrl } from "../../lib/fiches.js";
 import {
   PRIX_DATE_FR,
@@ -145,6 +145,32 @@ export default function BonsPlans() {
               </li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/*
+        Bouton « toutes les offres » : la page d'offres vers laquelle menait le lien
+        raccourci fourni par l'éditeur, reconstruite en direct sur amazon.fr. Un lien
+        de recherche ne remplace pas les fiches produit taguées plus haut — il ne
+        montre qu'une liste d'annonces, neuf et reconditionné mélangés.
+      */}
+      <section className="cta-final">
+        <div className="container">
+          <h2>Voir aussi les offres des autres vendeurs</h2>
+          <p>
+            La page Amazon ci-dessous regroupe les annonces de la boutique Apple et
+            des revendeurs — y compris les générations précédentes, qui sortent de
+            notre comparatif. Les montants y sont affichés par Amazon : eux seuls
+            font foi, nos relevés datent du {PRIX_DATE_FR}.
+          </p>
+          <a
+            className="btn btn-amber"
+            href={offresLink()}
+            target="_blank"
+            rel="sponsored nofollow noopener"
+          >
+            Voir toutes les offres iPhone sur Amazon →
+          </a>
         </div>
       </section>
     </>

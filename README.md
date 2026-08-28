@@ -89,34 +89,82 @@ public/
 
 ## Affiliation Amazon (état de la configuration)
 
-Le **tag d'associé est intégré** : il est extrait du lien court
-`https://amzn.to/4wXCOF4`, qui redirige vers
-`amazon.com/…/dp/B0FSFLTSFS?…&tag=icompare0d-20`. Comme tous les liens du
-site sont fabriqués par `amazonLink()` dans `lib/site.js`, ce tag est posé
-automatiquement sur **chaque fiche produit** : 25 liens sortants sur
-`/`, `/comparatif` et `/boutique` (16 ASIN distincts), plus les URL des
-données structurées JSON-LD. Aucun lien ne part « nu » vers Amazon.
+Un **identifiant de suivi est posé sur chaque lien sortant** :
+`ludgerhouanou-21`, relevé dans un lien que l'éditeur a fourni (et qui se
+termine par le suffixe des programmes européens). Tous les liens du site sont
+fabriqués par `amazonLink()` dans `lib/site.js`, donc rien ne part « nu » ni
+avec un tag collé deux fois : **53 liens Amazon sur les 21 pages** — 25 sur
+`/`, `/comparatif` et `/boutique` (16 ASIN distincts), 12 sur `/bons-plans`
+dont le bouton « toutes les offres », 16 sur les fiches produit (la fiche
+iPhone 18 en est dépourvue : aucun ASIN vérifié n'existe pour ce modèle). Les
+URL des données structurées JSON-LD portent le même tag.
 
-Un `next build` **avertit dans les journaux** si la configuration ne peut
-pas créditer de commission (tag placeholder, ou suffixe de marché qui ne
-correspond pas au domaine lié). Rien n'est affiché au visiteur.
+Un `next build` **avertit dans les journaux** si la configuration ne peut pas
+créditer de commission (tag placeholder ou absent, suffixe non reconnu, ou
+suffixe qui ne couvre pas le domaine lié). Rien n'est affiché au visiteur.
+`npm run check` recontrôle le résultat sur le HTML livré : un lien sans tag ou
+sans `rel="sponsored"` fait échouer le build.
 
-### ⚠️ Le seul point qui bloque encore les commissions
+### Le tag : quel suffixe pour quel programme
 
-Le suffixe d'un identifiant Amazon désigne le **programme national** qui
-encaisse : `-20` = amazon.com, `-84` = amazon.fr. Le site est en euros et
-relie **amazon.fr**, mais le tag relevé est **`icompare0d-20`** (marché US).
-Dans cet état, Amazon ne crédite rien. Deux issues, au choix :
+Un identifiant partenaire Amazon porte le suffixe du **programme national** qui
+encaisse. Deux points à retenir, vérifiés dans l'aide officielle plutôt que
+devinés :
 
-- **Programme France (recommandé, cohérent avec les prix affichés)** :
-  créez un identifiant de suivi dans votre compte Associates FR, puis
-  `AMAZON_TAG=votretag-84` en variable d'environnement — ou
-  `amazonTag` dans `lib/site.js`.
-- **Programme États-Unis** : `AMAZON_DOMAIN=amazon.com`. Il faudra alors
-  relire les prix : ils passent en dollars et en disponibilité US.
+- Les programmes **européens** (France, Allemagne, Espagne, Italie,
+  Royaume-Uni, Pays-Bas, Pologne, Suède…) partagent le suffixe **`-21`** :
+  l'aide Partenaires Amazon FR indique que « notre logiciel ajoute
+  automatiquement `-21` à la fin de toutes les identifications partenaires ».
+  Il n'y a donc **pas** de suffixe français dédié — un `-84` serait un tag
+  inconnu d'Amazon, donc non rémunéré.
+- Le programme **États-Unis / Canada** utilise **`-20`**.
 
-Les variables `AMAZON_TAG`, `AMAZON_DOMAIN` et `SITE_URL` évitent de
-repousser du code pour changer de marché.
+Le site relie `amazon.fr` et est en euros : `lib/site.js` utilise donc
+`ludgerhouanou-21`. **Cet identifiant est bien celui de l'éditeur** — confirmé
+le 28 août 2026 ; ce n'est donc pas un tag de courtoisie emprunté à un compte
+tiers, et il ne faut pas le remplacer par `icompare0d-20`, qui appartient au
+programme américain. `affiliateIssues()` compare le suffixe au domaine et
+avertit au build en cas d'incohérence — c'est ce contrôle qui avait signalé, à
+juste titre, le tag `-20` sur des liens `.fr`.
+
+Une chose reste **à vérifier dans le tableau de bord**, le code ne peut pas la
+voir : que le compte Partners qui porte `ludgerhouanou-21` **rémunère bien la
+France** — c'est-à-dire que `www.amazon.fr` figure dans ses marchés (Account
+settings → Markets / « Earn globally »), avec profil fiscal et moyen de
+paiement validés pour ce marché. Un compte qui n'a pas la France dans ses
+marchés ne crédite rien, quel que soit le suffixe collé dans l'URL. Deux
+autres cases conditionnent le versement, et elles sont hors du dépôt :
+
+- le **domaine du site doit être déclaré** dans le compte (Account settings →
+  Website list) : sans déclaration, les clics ne sont pas attribués ;
+- **3 ventes qualifiantes dans les 180 jours** suivant l'inscription, sinon le
+  compte est fermé et les commissions en cours sont perdues.
+
+### Le lien `link.amazon` n'est pas un lien produit
+
+Vous avez fourni `https://link.amazon/B06gD11hu`. Mesuré : il renvoie vers
+`amzlinks.in` (302), qui renvoie vers
+`amazon.fr/s?k=iPhone&i=specialty-aps&srs=95175955031&tag=ludgerhouanou-21`.
+Trois conséquences :
+
+- la destination est une **liste de résultats** (recherche filtrée), pas une
+  fiche produit : ce lien ne peut équiper ni `dp/<ASIN>` ni le JSON-LD ;
+- `B06gD11hu` n'est pas un ASIN (9 caractères avec minuscules ; un ASIN en
+  compte 10, majuscules) — `link.amazon` renvoie d'ailleurs 302 pour n'importe
+  quelle chaîne en forme d'ASIN et 403 pour le reste, sans vérifier que le
+  produit existe ;
+- la chaîne traverse un **domaine tiers** (réponse portant l'en-tête
+  `x-access-control-allow-origin: https://api.amzlinks.in`) dont rien
+  n'établit qu'il appartienne à Amazon : sa destination peut changer après
+  votre mise en ligne, ce que le règlement des Partenaires interdit
+  précisément (pas de masquage du lien de destination).
+
+Ce qui est récupérable dans ce lien, c'est **le tag et la page d'offres**.
+`offresLink()` (`lib/site.js`) reconstruit donc cette page
+`amazon.fr/s?…` **en direct**, sans le relais tiers et sans le jeton
+`ascsubtag` rotatif, et elle sert au bouton « Voir toutes les offres » de
+`/bons-plans`. Les fiches produits, elles, gardent des liens
+`amazon.fr/dp/<ASIN>?tag=…` vérifiés un par un.
 
 ### Épingler un lien précis sur un article
 
