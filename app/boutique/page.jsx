@@ -57,28 +57,34 @@ const jsonLd = {
       "@type": "ItemList",
       name: "Boutique Apple : sélection d'Apple Watch, iPhone, iPad, AirPods et accessoires",
       numberOfItems: BOUTIQUE_PRODUCTS.length,
-      itemListElement: BOUTIQUE_PRODUCTS.map((p, i) => ({
-        "@type": "ListItem",
-        position: i + 1,
-        item: {
-          "@type": "Product",
-          name: `${p.name} — ${p.sub}`,
-          brand: { "@type": "Brand", name: p.brand || "Apple" },
-          description: p.tagline,
-          offers: {
-            "@type": "Offer",
-            // Le prix déclaré à Google doit être celui que le lecteur voit.
-            // Deux fiches portaient un priceValue divergent du texte affiché
-            // (iphone-17e : 719 € déclaré pour « ≈ 650 – 720 € » ; chargeur
-            // RUXELY : 13 € pour « ≈ 14 € ») — écart de prix = donnée enrichie
-            // refusée ou pénalisée. On prend le minimum de la fourchette.
-            price: String(euroMini(p.price) ?? p.priceValue),
-            priceCurrency: "EUR",
-            availability: "https://schema.org/InStock",
-            url: productLink(p),
+      itemListElement: BOUTIQUE_PRODUCTS.map((p, i) => {
+        // Le prix déclaré à Google est déduit du texte que le lecteur voit :
+        // un second champ de prix écrit à la main (l'ancien `priceValue`)
+        // finissait toujours par diverger de l'affichage — et un écart de prix
+        // entre la page et le JSON-LD, c'est une donnée enrichie refusée.
+        // Aucun prix chiffrable ⇒ pas d'Offer du tout, plutôt qu'un prix inventé.
+        const plancher = euroMini(p.price);
+        const offers = plancher
+          ? {
+              "@type": "Offer",
+              price: String(plancher),
+              priceCurrency: "EUR",
+              availability: "https://schema.org/InStock",
+              url: productLink(p),
+            }
+          : undefined;
+        return {
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Product",
+            name: `${p.name} — ${p.sub}`,
+            brand: { "@type": "Brand", name: p.brand || "Apple" },
+            description: p.tagline,
+            ...(offers ? { offers } : {}),
           },
-        },
-      })),
+        };
+      }),
     },
   ],
 };

@@ -13,8 +13,33 @@ prêt pour **Vercel**.
 npm install
 npm run dev     # développement (port 3000)
 npm run build   # production
+npm run check   # contrôle le HTML LIVRÉ (voir « Contrôle du build »)
 npm run start   # sert le build
 ```
+
+## Contrôle du build (`npm run check`)
+
+`tools/check-build.mjs` ne teste pas le code, il teste **ce que le visiteur
+reçoit** : il lit le HTML statique sorti par Next et vérifie, page par page —
+
+- un seul `<h1>`, un `<title>` et une `description` présents et **uniques à
+  l'échelle du site** (le contrôle a attrapé 17 fiches qui partageaient le
+  `<title>` de la page mère, après qu'une réécriture eut fait disparaître
+  `generateMetadata` : le build, lui, passait) ;
+- `rel=canonical` présent et cohérent avec l'URL de la page ;
+- chaque lien Amazon portant le tag d'associé configuré, `rel="sponsored"`,
+  sans `?tag=` vide ;
+- aucun `href="null"` (produit non vendu → bouton masqué, pas lien cassé) ;
+- chaque bloc JSON-LD parsable, et le prix de l'`Offer` égal au minimum de la
+  fourchette affichée sur la même carte ;
+- chaque lien interne correspondant à une page réellement construite ;
+- aucun poids de page anormal (> 220 Ko : signe qu'une page mérite d'être
+  découpée) et aucun placeholder (`votretag`, `votredomaine`) dans le HTML.
+
+Il sort **code 1** au premier problème : à passer avant chaque déploiement
+(ou en CI). Un contrôle qui ne peut pas échouer ne protège rien — il a été
+validé en retirant volontairement le canonical de l'accueil, ce qu'il a
+signalé.
 
 ## Déployer sur Vercel (2 façons)
 
@@ -207,12 +232,22 @@ Mesuré sur le build statique, `comparatif.html` passe de **185,1 Ko à 158 Ko**
 vraiment le réseau — la page boutique est à parité (14,1 contre 14,5 Ko) tout
 en restant lisible sans JavaScript.
 
-### À corriger dans les données (repéré par le contrôle croisé)
+### Un seul prix par produit
 
-- `iphone-17e` : `priceValue: "719"` (l'ancien prix de lancement) alors que
-  `price` annonce « ≈ 650 – 720 € ». Le JSON-LD lit désormais le minimum de la
-  fourchette — mais remplacez la valeur pour que les deux concordent.
-- `watch-charger-ruxely` : `priceValue: "13"` pour un prix affiché « ≈ 14 € ».
+Il existait deux sources de vérité pour le même montant : la fourchette
+affichée (`price: "≈ 650 – 720 €"`) et un `priceValue` tapé à la main pour le
+JSON-LD. Sur 15 produits, deux avaient déjà dérivé (iPhone 17e déclaré à
+719 € pour un affichage à 650 €, chargeur RUXELY à 13 € pour 14 € affichés).
+Un désaccord entre la page et ses données structurées, c'est un résultat
+enrichi refusé par Google — et un lecteur qui clique sur un prix qui n'est
+pas celui qu'on lui promettait.
+
+`priceValue` est donc **supprimé des données** : le prix déclaré aux moteurs
+est déduit de la fourchette au moment du build (`euroMini`, dans
+`lib/prix.js`), et une fiche dont le prix n'est pas chiffrable n'a tout
+simplement **pas d'`Offer`** plutôt qu'un prix inventé. Le contrôle
+`npm run check` recoupe les deux et échoue si jamais ils se remettent à
+diverger.
 
 ## SEO inclus
 
